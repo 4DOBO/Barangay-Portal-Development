@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FolderKanban, Plus, Calendar } from "lucide-react";
+import { FolderKanban, Plus, Trash2, Calendar } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Project {
@@ -17,6 +17,7 @@ export default function ManageProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [accessToken, setAccessToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -91,6 +92,38 @@ export default function ManageProjects() {
       setError(err.message || "Failed to create project");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this project?")) return;
+
+    setDeleting(id);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/projects/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = "Failed to delete project";
+        try { message = JSON.parse(text).error || message; } catch {}
+        throw new Error(message);
+      }
+
+      setSuccess("Project deleted successfully!");
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      console.error("Error deleting project:", err);
+      setError(err.message || "Failed to delete project");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -237,7 +270,17 @@ export default function ManageProjects() {
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h3>
-                    <p className="text-gray-600">{project.description}</p>
+                    <p className="text-gray-600 mb-4">{project.description}</p>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(project.id)}
+                      disabled={deleting === project.id}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {deleting === project.id ? "Deleting..." : "Delete"}
+                    </button>
                   </div>
                 </div>
               ))}

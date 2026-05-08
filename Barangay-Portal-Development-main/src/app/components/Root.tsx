@@ -7,6 +7,7 @@ import sampleLogo from "../../assets/Sample Barangay Logo.png";
 export default function Root() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,12 +22,46 @@ export default function Root() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setShowLogoutModal(false);
     navigate("/");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
+
+      {/* ── LOGOUT CONFIRMATION MODAL ── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Logout</h3>
+            <p className="text-gray-500 text-sm mb-6">Are you sure you want to logout?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition text-sm"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── HEADER ── */}
       <header style={{ backgroundColor: '#ffffff', borderBottom: '5px solid #1350A3', boxShadow: '0 4px 16px rgba(19,80,163,0.18)' }} className="sticky top-0 z-50">
@@ -43,22 +78,22 @@ export default function Root() {
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-8">
-              <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="transition hover:text-blue-600">Home</Link>
+              <Link to="/" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black transition hover:text-blue-600">Home</Link>
               {isAdmin ? (
                 <>
-                  <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="transition hover:text-blue-600">Reports</Link>
-                  <Link to="/admin/announcements" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="transition hover:text-blue-600">Announcements</Link>
-                  <Link to="/admin/projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="transition hover:text-blue-600">Projects</Link>
+                  <Link to="/admin/reports" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black transition hover:text-blue-600">Reports</Link>
+                  <Link to="/admin/announcements" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black transition hover:text-blue-600">Announcements</Link>
+                  <Link to="/admin/projects" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black transition hover:text-blue-600">Projects</Link>
                   <button
-                    onClick={handleLogout}
-                    style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
-                    className="flex items-center gap-2 px-2 py-1 hover:opacity-60 transition cursor-pointer"
+                    onClick={() => setShowLogoutModal(true)}
+                    style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
+                    className="flex items-center gap-2 px-2 py-1 text-black transition hover:text-red-600 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> Logout
                   </button>
                 </>
               ) : (
-                <Link to="/login" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="px-2 py-1 hover:opacity-60 transition">
+                <Link to="/login" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black px-2 py-1 hover:text-blue-600 transition">
                   Admin Login
                 </Link>
               )}
@@ -74,22 +109,22 @@ export default function Root() {
           {mobileMenuOpen && (
             <div style={{ borderTop: '1px solid #1350A3' }} className="md:hidden py-4">
               <div className="flex flex-col gap-4">
-                <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+                <Link to="/" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Home</Link>
                 {isAdmin ? (
                   <>
-                    <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>Reports</Link>
-                    <Link to="/admin/announcements" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>Announcements</Link>
-                    <Link to="/admin/projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>Projects</Link>
+                    <Link to="/admin/reports" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Reports</Link>
+                    <Link to="/admin/announcements" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Announcements</Link>
+                    <Link to="/admin/projects" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Projects</Link>
                     <button
-                      onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                      style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
-                      className="flex items-center gap-2 px-2 py-1 hover:opacity-60 cursor-pointer"
+                      onClick={() => { setMobileMenuOpen(false); setShowLogoutModal(true); }}
+                      style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
+                      className="flex items-center gap-2 px-2 py-1 text-black hover:text-red-600 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" /> Logout
                     </button>
                   </>
                 ) : (
-                  <Link to="/login" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="px-2 py-1 hover:opacity-60 text-center" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/login" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black px-2 py-1 hover:text-blue-600 text-center" onClick={() => setMobileMenuOpen(false)}>
                     Admin Login
                   </Link>
                 )}
@@ -109,12 +144,7 @@ export default function Root() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                {/* Barangay Maligaya logo */}
-                <img
-                  src={sampleLogo}
-                  alt="Barangay Maligaya Logo"
-                  className="w-12 h-12 object-contain rounded-full"
-                />
+                <img src={sampleLogo} alt="Barangay Maligaya Logo" className="w-12 h-12 object-contain rounded-full" />
                 <h3 className="text-2xl font-bold">Barangay Portal</h3>
               </div>
               <p className="text-gray-300 leading-relaxed">Connecting the community through technology and transparency.</p>
