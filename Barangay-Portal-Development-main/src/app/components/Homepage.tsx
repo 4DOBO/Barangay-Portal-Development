@@ -80,7 +80,6 @@ export default function Homepage() {
         />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 py-16 sm:py-20 flex flex-col lg:flex-row items-center justify-between gap-10">
-          {/* Text */}
           <div className="w-full lg:max-w-xl text-center lg:text-left">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
               Welcome to Our<br />Barangay Portal
@@ -104,7 +103,6 @@ export default function Homepage() {
             </div>
           </div>
 
-          {/* Logos — same size, hidden on mobile */}
           <div className="hidden lg:flex items-center gap-8 flex-shrink-0">
             <img src={manilaLogo} alt="Lungsod ng Maynila" className="w-28 h-28 object-contain drop-shadow-xl" />
             <img src={sampleLogo} alt="Barangay Maligaya" className="w-40 h-40 object-contain drop-shadow-xl" />
@@ -151,7 +149,7 @@ export default function Homepage() {
       </section>
 
       {/* ── PROJECTS ── */}
-      <section className="py-14 sm:py-20 bg-gray-50">
+      <section className="py-14 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">Barangay Projects</h2>

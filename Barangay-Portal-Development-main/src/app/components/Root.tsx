@@ -30,15 +30,10 @@ export default function Root() {
     <div className="min-h-screen bg-gray-50">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
 
-      {/* ── LOGOUT CONFIRMATION MODAL ── */}
+      {/* ── LOGOUT MODAL ── */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowLogoutModal(false)}
-          />
-          {/* Modal */}
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowLogoutModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 text-center">
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogOut className="w-7 h-7 text-red-600" />
@@ -76,7 +71,6 @@ export default function Root() {
               </div>
             </Link>
 
-            {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-8">
               <Link to="/" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="text-black transition hover:text-blue-600">Home</Link>
               {isAdmin ? (
@@ -99,13 +93,11 @@ export default function Root() {
               )}
             </div>
 
-            {/* Mobile hamburger */}
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ color: '#13503' }} className="md:hidden p-2">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
-          {/* Mobile menu */}
           {mobileMenuOpen && (
             <div style={{ borderTop: '1px solid #1350A3' }} className="md:hidden py-4">
               <div className="flex flex-col gap-4">
@@ -149,7 +141,6 @@ export default function Root() {
               </div>
               <p className="text-gray-300 leading-relaxed">Connecting the community through technology and transparency.</p>
             </div>
-
             <div>
               <h3 className="text-xl font-bold mb-4">Quick Links</h3>
               <div className="flex flex-col gap-3">
@@ -164,7 +155,6 @@ export default function Root() {
                 )}
               </div>
             </div>
-
             <div>
               <h3 className="text-xl font-bold mb-4">Contact Us</h3>
               <div className="space-y-2 text-gray-300">
@@ -174,7 +164,6 @@ export default function Root() {
               </div>
             </div>
           </div>
-
           <div className="mt-12 pt-8 border-t border-gray-700 text-center text-gray-400">
             <p>&copy; 2026 Barangay Portal. All rights reserved.</p>
           </div>
