@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FolderKanban, Plus, Trash2, Calendar } from "lucide-react";
+import { FolderKanban, Plus, Trash2, Calendar, Megaphone, X } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Project {
@@ -21,6 +21,13 @@ export default function ManageProjects() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
+
+  // Announcement modal state
+  const [showAnnModal, setShowAnnModal] = useState(false);
+  const [annProject, setAnnProject] = useState<Project | null>(null);
+  const [annForm, setAnnForm] = useState({ title: "", content: "", imageUrl: "" });
+  const [annSubmitting, setAnnSubmitting] = useState(false);
+  const [annError, setAnnError] = useState("");
 
   const [formData, setFormData] = useState({ title: "", description: "", imageUrl: "", status: "ongoing" });
 
@@ -92,8 +99,110 @@ export default function ManageProjects() {
     }
   };
 
+  const openAnnModal = (project: Project) => {
+    setAnnProject(project);
+    setAnnForm({
+      title: `Update: ${project.title}`,
+      content: "",
+      imageUrl: project.imageUrl || "",
+    });
+    setAnnError("");
+    setShowAnnModal(true);
+  };
+
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAnnError(""); setAnnSubmitting(true);
+    try {
+      const response = await fetch(`${API_URL}/announcements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(annForm),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to create announcement");
+      setShowAnnModal(false);
+      setSuccess("Announcement created successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setAnnError(err.message || "Failed to create announcement");
+    } finally {
+      setAnnSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+
+      {/* ── ANNOUNCEMENT MODAL ── */}
+      {showAnnModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowAnnModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8">
+            <button onClick={() => setShowAnnModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-blue-600" /> Create Announcement
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">From project: <span className="font-semibold text-gray-700">{annProject?.title}</span></p>
+
+            {annError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{annError}</div>}
+
+            <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={annForm.title}
+                  onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Announcement title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Content *</label>
+                <textarea
+                  required
+                  value={annForm.content}
+                  onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Announcement content..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL (Optional)</label>
+                <input
+                  type="url"
+                  value={annForm.imageUrl}
+                  onChange={(e) => setAnnForm({ ...annForm, imageUrl: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAnnModal(false)}
+                  className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={annSubmitting}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition text-sm"
+                >
+                  {annSubmitting ? "Creating..." : "Create Announcement"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -165,14 +274,25 @@ export default function ManageProjects() {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{p.title}</h3>
                     <p className="text-gray-600 mb-4">{p.description}</p>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      disabled={deleting === p.id}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition font-semibold text-sm disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      {deleting === p.id ? "Deleting..." : "Delete"}
-                    </button>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => openAnnModal(p)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition font-semibold text-sm"
+                      >
+                        <Megaphone className="w-4 h-4" />
+                        Create Announcement
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        disabled={deleting === p.id}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition font-semibold text-sm disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {deleting === p.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
