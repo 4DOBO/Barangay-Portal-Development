@@ -47,6 +47,12 @@ export default function Root() {
 
             <div className="hidden md:flex items-center gap-8">
               <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Home</Link>
+              <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">
+                About Us
+              </a>
+              <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">
+                Hotlines
+              </a>
               {isAdmin ? (
                 <>
                   <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Reports</Link>
@@ -83,6 +89,12 @@ export default function Root() {
                 <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
                   Home
                 </Link>
+                <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
+                  About Us
+                </a>
+                <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
+                  Hotlines
+                </a>
                 {isAdmin ? (
                   <>
                     <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
@@ -149,7 +161,7 @@ export default function Root() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div>
+            <div id="about-us">
               <div className="flex items-center gap-3 mb-4">
                 <h3 className="text-2xl font-regular" style={{ marginLeft: -220, marginTop: -50, letterSpacing: 15, lineHeight: 2 }}>OFFICIAL WEBSITE OF BARANGAY MALIGAYA</h3>
               </div>
@@ -159,7 +171,7 @@ export default function Root() {
               <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>(049) 567-341</p>
             </div>
 
-            <div>
+            <div id="hotlines">
               <div className="mb-5">
                 <h3 className="text-2xl font-bold" style={{ marginLeft: 0, marginTop: -50, lineHeight: 2 }}>Emergency Hotline</h3>
               </div>
@@ -184,8 +196,19 @@ export default function Root() {
 
               <h3 className="text-xl font-bold mb-1" style={{ marginLeft: 250, marginTop: -360, lineHeight: 2 }}>Quick Links</h3>
               <div className="flex flex-col gap-3">
-                <Link to="/" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>Home</Link>
-                <Link to="/submit-report" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>Submit Report</Link>
+                <a href="/#announcements" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>
+                  Announcements
+                </a>
+                <a href="/#projects" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>
+                  Projects
+                </a>
+                <button
+                  type="button"
+                  className="text-left text-gray-300 hover:text-white transition"
+                  style={{ marginLeft: 250, background: "none", border: "none", padding: 0 }}
+                >
+                  Ayuda
+                </button>
                 {isAdmin && (
                   <>
                     <Link to="/admin/reports" className="text-gray-300 hover:text-white transition">Reports Dashboard</Link>
