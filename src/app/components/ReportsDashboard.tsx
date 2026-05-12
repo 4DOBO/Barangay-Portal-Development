@@ -142,41 +142,37 @@ export default function ReportsDashboard() {
           <div className="flex flex-wrap gap-2 p-4 border-b">
             <button
               onClick={() => setActiveFilter("primary")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${
-                activeFilter === "primary"
+              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "primary"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               Primary ({reports.length})
             </button>
             <button
               onClick={() => setActiveFilter("pending")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${
-                activeFilter === "pending"
+              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "pending"
                   ? "bg-yellow-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               Pending ({reports.filter((r) => r.status === "pending").length})
             </button>
             <button
               onClick={() => setActiveFilter("in_progress")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${
-                activeFilter === "in_progress"
+              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "in_progress"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               In Progress ({reports.filter((r) => r.status === "in_progress").length})
             </button>
             <button
               onClick={() => setActiveFilter("done")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${
-                activeFilter === "done"
+              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "done"
                   ? "bg-green-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               Done ({reports.filter((r) => r.status === "done").length})
             </button>
