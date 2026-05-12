@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FileText, MapPin, User, Phone, Calendar } from "lucide-react";
+import { FileText, MapPin, User, Phone, Calendar, Mail, Trash2 } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Report {
@@ -25,6 +25,7 @@ export default function ReportsDashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("primary");
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState("");
+  const [displayName, setDisplayName] = useState("User");
 
   useEffect(() => {
     checkAuth();
@@ -46,6 +47,12 @@ export default function ReportsDashboard() {
       navigate("/login");
       return;
     }
+    const metadataName =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.name ||
+      session.user.user_metadata?.display_name;
+    const emailName = session.user.email?.split("@")[0];
+    setDisplayName(metadataName || emailName || "User");
     setAccessToken(session.access_token);
   };
 
@@ -100,6 +107,31 @@ export default function ReportsDashboard() {
     }
   };
 
+  const deleteReport = async (reportId: string) => {
+    const confirmed = window.confirm("Delete this completed report?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/reports/${reportId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete report");
+      }
+
+      setReports((prev) => prev.filter((report) => report.id !== reportId));
+    } catch (error: any) {
+      console.error("Error deleting report:", error);
+      alert(error.message || "Failed to delete report");
+    }
+  };
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -126,54 +158,92 @@ export default function ReportsDashboard() {
     }
   };
 
+  const getFilterButtonClass = (filter: FilterStatus) => {
+    const isActive = activeFilter === filter;
+
+    if (!isActive) {
+      return "border-b-2 border-transparent text-gray-600 hover:text-gray-900";
+    }
+
+    switch (filter) {
+      case "pending":
+        return "border-b-2 border-yellow-600 text-yellow-600";
+      case "in_progress":
+        return "border-b-2 border-blue-600 text-blue-600";
+      case "done":
+        return "border-b-2 border-green-600 text-green-600";
+      default:
+        return "border-b-2 border-[#1350A3] text-[#1350A3]";
+    }
+  };
+
+  const getFilterIndicatorClass = (filter: FilterStatus) => {
+    const isActive = activeFilter === filter;
+
+    if (!isActive) {
+      return "border-gray-400 bg-transparent text-gray-400";
+    }
+
+    switch (filter) {
+      case "pending":
+        return "border-yellow-600 bg-yellow-600 text-yellow-600";
+      case "in_progress":
+        return "border-blue-600 bg-blue-600 text-blue-600";
+      case "done":
+        return "border-green-600 bg-green-600 text-green-600";
+      default:
+        return "border-[#1350A3] bg-transparent text-[#1350A3]";
+    }
+  };
+
   const getCategoryIcon = (category: string) => {
     return <FileText className="w-4 h-4" />;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports Dashboard</h1>
-          <p className="text-gray-600">Manage and track all resident reports</p>
+        <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-black bg-transparent p-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome, {displayName}</h1>
+            <p className="text-gray-600">Have a great day.</p>
+          </div>
+          <div className="text-left md:text-right">
+            <p className="text-sm font-medium text-gray-500">
+              Total Reports as of {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            </p>
+            <p className="text-4xl font-bold text-[#1350A3]">{reports.length}</p>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md mb-6">
           <div className="flex flex-wrap gap-2 p-4 border-b">
             <button
               onClick={() => setActiveFilter("primary")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "primary"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("primary")}`}
             >
+              <Mail className={`h-5 w-5 ${getFilterIndicatorClass("primary")}`} />
               Primary ({reports.length})
             </button>
             <button
               onClick={() => setActiveFilter("pending")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "pending"
-                  ? "bg-yellow-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("pending")}`}
             >
+              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("pending")}`} />
               Pending ({reports.filter((r) => r.status === "pending").length})
             </button>
             <button
               onClick={() => setActiveFilter("in_progress")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "in_progress"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("in_progress")}`}
             >
+              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("in_progress")}`} />
               In Progress ({reports.filter((r) => r.status === "in_progress").length})
             </button>
             <button
               onClick={() => setActiveFilter("done")}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${activeFilter === "done"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("done")}`}
             >
+              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("done")}`} />
               Done ({reports.filter((r) => r.status === "done").length})
             </button>
           </div>
@@ -191,7 +261,17 @@ export default function ReportsDashboard() {
             ) : (
               <div className="space-y-4">
                 {filteredReports.map((report) => (
-                  <div key={report.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                  <div key={report.id} className="relative border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                    {activeFilter === "done" && report.status === "done" && (
+                      <button
+                        onClick={() => deleteReport(report.id)}
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-red-600 transition hover:text-red-700"
+                        style={{ background: "none", border: "none" }}
+                        aria-label="Delete report"
+                      >
+                        <Trash2 className="h-6 w-6" />
+                      </button>
+                    )}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">

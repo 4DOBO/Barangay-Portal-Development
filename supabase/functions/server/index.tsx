@@ -124,6 +124,36 @@ app.patch("/make-server-97d3df46/reports/:id", async (c) => {
   }
 });
 
+// Delete report (admin only)
+app.delete("/make-server-97d3df46/reports/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized report delete attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const reportId = c.req.param("id");
+    const report = await kv.get(reportId);
+    if (!report) {
+      return c.json({ error: "Report not found" }, 404);
+    }
+
+    await kv.del(reportId);
+    console.log(`Report deleted successfully: ${reportId}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log(`Error deleting report: ${error}`);
+    return c.json({ error: `Failed to delete report: ${error.message}` }, 500);
+  }
+});
+
 // Create announcement (admin only)
 app.post("/make-server-97d3df46/announcements", async (c) => {
   try {
