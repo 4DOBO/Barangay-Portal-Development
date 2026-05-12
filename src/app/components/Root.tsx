@@ -3,6 +3,8 @@ import { Menu, X, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import sampleLogo from "../../assets/Sample Barangay Logo.png";
+import manilaLogo from "../../assets/Manila.png"
+
 
 export default function Root() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -119,17 +121,39 @@ export default function Root() {
         <Outlet />
       </main>
 
-      <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+      <footer
+        style={{
+          backgroundColor: "rgba(19, 80, 163, 1)",
+          boxShadow: "0 16px 24px rgba(13, 13, 14, 0.18)",
+          fontFamily: "'Poppins', sans-serif",
+          fontSize: "15px",
+          fontWeight: 400,
+        }}
+        className="relative z-10 text-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="mb-10 flex justify-start" style={{ marginLeft: -250 }}>
+            <div className="flex items-center gap-4">
+              <img
+                src={sampleLogo}
+                alt="Sample Barangay Logo"
+                style={{ width: "140px", height: "140px" }}
+                className="object-contain"
+              />
+              <img
+                src={manilaLogo}
+                alt="Manila Logo"
+                style={{ width: "90px", height: "90px" }}
+                className="object-contain"
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  B
-                </div>
-                <h3 className="text-2xl font-bold">Barangay Portal</h3>
+                <h3 className="text-2xl font-regular" style={{ marginLeft: -220, marginTop: -50, letterSpacing: 15 }}>OFFICIAL WEBSITE OF BARANGAY MALIGAYA</h3>
               </div>
-              <p className="text-gray-300 leading-relaxed">Connecting the community through technology and transparency.</p>
+              <p className="text-gray-300 leading-relaxed" style={{ marginLeft: -220 }}>Connecting the community through technology and transparency.</p>
             </div>
             <div>
               <h3 className="text-xl font-bold mb-4">Quick Links</h3>

@@ -56,23 +56,25 @@ export default function Homepage() {
   };
 
   return (
-    <div className="bg-white">
+    <div className="relative min-h-screen overflow-hidden">
+      <div
+        aria-hidden="true"
+        style={{
+          backgroundImage: `url(${barangayBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          backgroundRepeat: "no-repeat",
+          opacity: 0.5,
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
       <section
-        className="relative bg-white bg-center min-h-[600px] flex items-center overflow-hidden"
+        className="relative min-h-[600px] flex items-center overflow-hidden z-10"
       >
-        {/* Background image at 30% opacity */}
-        <div
-          style={{
-            backgroundImage: `url(${barangayBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
-            opacity: 0.30,
-            position: 'absolute',
-            inset: 0,
-            zIndex: 0,
-          }}
-        />
         {/* Dark overlay for text readability */}
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.18)', zIndex: 1 }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 w-full" style={{ position: 'absolute', left: 1000, top: -30, zIndex: 2 }}>
@@ -91,7 +93,7 @@ export default function Homepage() {
       </section>
 
 
-      <section id="announcements" className="py-20 bg-white" style={{ marginTop: '30px' }}>
+      <section id="announcements" className="relative z-10 py-20" style={{ backgroundColor: 'rgba(255, 255, 255, 0.75)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Mate SC', serif", fontSize: '48px', fontWeight: '400', color: '#000000', lineHeight: 1, WebkitTextStroke: '1px #000000' }}>LATEST ANNOUNCEMENTS</h2>
@@ -128,15 +130,15 @@ export default function Homepage() {
         </div>
       </section>
 
-      <section className="bg-black py-20" style={{ marginTop: '30px' }}>
+      <section className="relative z-10 py-20" style={{ backgroundColor: 'rgba(255, 255, 255, 0.75)', marginTop: 30 }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Barangay Projects</h2>
-            <p className="text-xl text-gray-600">Building a better community together</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Mate SC', serif", fontSize: '48px', fontWeight: '400', color: '#000000', lineHeight: 1, WebkitTextStroke: '1px #000000' }}>BARANGAY PROJECTS</h2>
+            <p className="text-xl text-gray-600" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Building a better community together</p>
           </div>
 
           {loading ? (
-            <div className="text-center py-12 text-gray-500">Loading projects...</div>
+            <div className="text-center py-12 text-gray-500" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Loading projects...</div>
           ) : projects.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-xl shadow-md">
               <p className="text-gray-500 text-lg">No projects yet.</p>
