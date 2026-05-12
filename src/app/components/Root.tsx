@@ -151,15 +151,41 @@ export default function Root() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-2xl font-regular" style={{ marginLeft: -220, marginTop: -50, letterSpacing: 15 }}>OFFICIAL WEBSITE OF BARANGAY MALIGAYA</h3>
+                <h3 className="text-2xl font-regular" style={{ marginLeft: -220, marginTop: -50, letterSpacing: 15, lineHeight: 2 }}>OFFICIAL WEBSITE OF BARANGAY MALIGAYA</h3>
               </div>
-              <p className="text-gray-300 leading-relaxed" style={{ marginLeft: -220 }}>Connecting the community through technology and transparency.</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -220, fontSize: '16px' }}>About this website</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>Contact us</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>info.brgymaligaya@gmail.com</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>(049) 567-341</p>
             </div>
+
             <div>
-              <h3 className="text-xl font-bold mb-4">Quick Links</h3>
+              <div className="mb-5">
+                <h3 className="text-2xl font-bold" style={{ marginLeft: 0, marginTop: -50, lineHeight: 2 }}>Emergency Hotline</h3>
+              </div>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>BFP</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>(02) 8426-0219</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>(02) 8426-0246 </p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>NDRRMC</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>(02) 8911-5061 TO 65, loc 100</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>DSWD</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>(02) 8931-8101 to 07</p>
+            </div>
+
+            <div>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px', lineHeight: 2 }}>MMDA</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, fontSize: '16px', lineHeight: 2 }}>(02) 882 4151 to 77</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, fontSize: '16px', lineHeight: 2 }}>(02) DPWH </p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>165-02</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>PAG-ASA</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>(02) 8284-0800</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>PNP</p>
+              <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>(02) 8722-0650 or 117</p>
+
+              <h3 className="text-xl font-bold mb-1" style={{ marginLeft: 250, marginTop: -360, lineHeight: 2 }}>Quick Links</h3>
               <div className="flex flex-col gap-3">
-                <Link to="/" className="text-gray-300 hover:text-white transition">Home</Link>
-                <Link to="/submit-report" className="text-gray-300 hover:text-white transition">Submit Report</Link>
+                <Link to="/" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>Home</Link>
+                <Link to="/submit-report" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>Submit Report</Link>
                 {isAdmin && (
                   <>
                     <Link to="/admin/reports" className="text-gray-300 hover:text-white transition">Reports Dashboard</Link>
@@ -169,17 +195,8 @@ export default function Root() {
                 )}
               </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold mb-4">Contact Us</h3>
-              <div className="space-y-2 text-gray-300">
-                <p>Email: barangay@example.com</p>
-                <p>Phone: (123) 456-7890</p>
-                <p>Address: Barangay Hall, City</p>
-              </div>
-            </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-gray-700 text-center text-gray-400">
-            <p>&copy; 2026 Barangay Portal. All rights reserved.</p>
+          <div className="space-10">
           </div>
         </div>
       </footer>
