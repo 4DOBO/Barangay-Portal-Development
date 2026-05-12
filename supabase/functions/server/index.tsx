@@ -337,6 +337,81 @@ app.get("/make-server-97d3df46/projects", async (c) => {
   }
 });
 
+// Update project (admin only)
+app.patch("/make-server-97d3df46/projects/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized project update attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const projectId = c.req.param("id");
+    const project = await kv.get(projectId);
+    if (!project) {
+      return c.json({ error: "Project not found" }, 404);
+    }
+
+    const body = await c.req.json();
+    const { title, description, imageUrl, status } = body;
+
+    if (!title || !description) {
+      return c.json({ error: "Missing required fields: title, description" }, 400);
+    }
+
+    const updatedProject = {
+      ...project,
+      title,
+      description,
+      imageUrl: imageUrl || "",
+      status: status || "ongoing",
+    };
+
+    await kv.set(projectId, updatedProject);
+    console.log(`Project updated successfully: ${projectId}`);
+    return c.json({ success: true, project: updatedProject });
+  } catch (error) {
+    console.log(`Error updating project: ${error}`);
+    return c.json({ error: `Failed to update project: ${error.message}` }, 500);
+  }
+});
+
+// Delete project (admin only)
+app.delete("/make-server-97d3df46/projects/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized project delete attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const projectId = c.req.param("id");
+    const project = await kv.get(projectId);
+    if (!project) {
+      return c.json({ error: "Project not found" }, 404);
+    }
+
+    await kv.del(projectId);
+    console.log(`Project deleted successfully: ${projectId}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log(`Error deleting project: ${error}`);
+    return c.json({ error: `Failed to delete project: ${error.message}` }, 500);
+  }
+});
+
 // Admin signup
 app.post("/make-server-97d3df46/signup", async (c) => {
   try {

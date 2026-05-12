@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FolderKanban, Plus, Calendar } from "lucide-react";
+import { FolderKanban, Plus, Calendar, Pencil, Trash2 } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Project {
@@ -20,6 +20,7 @@ export default function ManageProjects() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -66,8 +67,9 @@ export default function ManageProjects() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/projects`, {
-        method: "POST",
+      const isEditing = Boolean(editingProjectId);
+      const response = await fetch(isEditing ? `${API_URL}/projects/${editingProjectId}` : `${API_URL}/projects`, {
+        method: isEditing ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -78,32 +80,89 @@ export default function ManageProjects() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create project");
+        throw new Error(data.error || `Failed to ${isEditing ? "update" : "create"} project`);
       }
 
-      setSuccess("Project created successfully!");
+      setSuccess(`Project ${isEditing ? "updated" : "created"} successfully!`);
       setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
+      setEditingProjectId(null);
       setShowForm(false);
       fetchProjects();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      console.error("Error creating project:", err);
-      setError(err.message || "Failed to create project");
+      console.error("Error saving project:", err);
+      setError(err.message || "Failed to save project");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleEdit = (project: Project) => {
+    setEditingProjectId(project.id);
+    setFormData({
+      title: project.title,
+      description: project.description,
+      imageUrl: project.imageUrl,
+      status: project.status,
+    });
+    setShowForm(true);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleDelete = async (projectId: string) => {
+    const confirmed = window.confirm("Delete this project?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/projects/${projectId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete project");
+      }
+
+      setProjects((prev) => prev.filter((project) => project.id !== projectId));
+      if (editingProjectId === projectId) {
+        setEditingProjectId(null);
+        setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
+        setShowForm(false);
+      }
+    } catch (err: any) {
+      console.error("Error deleting project:", err);
+      setError(err.message || "Failed to delete project");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Manage Projects</h1>
-            <p className="text-gray-600">Create and manage barangay projects</p>
+          <div className="flex-1">
+            {showForm && (
+              <h1
+                className="text-center text-gray-900"
+                style={{ fontFamily: "'Mate SC', serif", fontSize: "40px", fontWeight: 400 }}
+              >
+                Projects
+              </h1>
+            )}
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false);
+                setEditingProjectId(null);
+                setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
+              } else {
+                setShowForm(true);
+              }
+            }}
             className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
           >
             <Plus className="w-5 h-5" />
@@ -127,7 +186,7 @@ export default function ManageProjects() {
           <div className="bg-white rounded-lg shadow-md p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <FolderKanban className="w-6 h-6" />
-              Create New Project
+              {editingProjectId ? "Edit Project" : "Create New Project"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -195,7 +254,7 @@ export default function ManageProjects() {
                 disabled={submitting}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Creating..." : "Create Project"}
+                {submitting ? (editingProjectId ? "Saving..." : "Creating...") : (editingProjectId ? "Save Changes" : "Create Project")}
               </button>
             </form>
           </div>
@@ -212,7 +271,7 @@ export default function ManageProjects() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.map((project) => (
-                <div key={project.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
+                <div key={project.id} className="relative border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
                   {project.imageUrl && (
                     <img
                       src={project.imageUrl}
@@ -220,7 +279,7 @@ export default function ManageProjects() {
                       className="w-full h-48 object-cover"
                     />
                   )}
-                  <div className="p-6">
+                  <div className="p-6 pb-16">
                     <div className="flex items-center justify-between mb-3">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-semibold ${
@@ -238,6 +297,26 @@ export default function ManageProjects() {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h3>
                     <p className="text-gray-600">{project.description}</p>
+                    <div className="absolute right-4 bottom-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(project)}
+                        className="text-gray-700 transition hover:text-blue-600"
+                        style={{ background: "none", border: "none" }}
+                        aria-label="Edit project"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(project.id)}
+                        className="text-gray-700 transition hover:text-red-600"
+                        style={{ background: "none", border: "none" }}
+                        aria-label="Delete project"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
