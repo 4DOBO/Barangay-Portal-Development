@@ -208,6 +208,80 @@ app.get("/make-server-97d3df46/announcements", async (c) => {
   }
 });
 
+// Update announcement (admin only)
+app.patch("/make-server-97d3df46/announcements/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized announcement update attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const announcementId = c.req.param("id");
+    const announcement = await kv.get(announcementId);
+    if (!announcement) {
+      return c.json({ error: "Announcement not found" }, 404);
+    }
+
+    const body = await c.req.json();
+    const { title, content, imageUrl } = body;
+
+    if (!title || !content) {
+      return c.json({ error: "Missing required fields: title, content" }, 400);
+    }
+
+    const updatedAnnouncement = {
+      ...announcement,
+      title,
+      content,
+      imageUrl: imageUrl || "",
+    };
+
+    await kv.set(announcementId, updatedAnnouncement);
+    console.log(`Announcement updated successfully: ${announcementId}`);
+    return c.json({ success: true, announcement: updatedAnnouncement });
+  } catch (error) {
+    console.log(`Error updating announcement: ${error}`);
+    return c.json({ error: `Failed to update announcement: ${error.message}` }, 500);
+  }
+});
+
+// Delete announcement (admin only)
+app.delete("/make-server-97d3df46/announcements/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized announcement delete attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const announcementId = c.req.param("id");
+    const announcement = await kv.get(announcementId);
+    if (!announcement) {
+      return c.json({ error: "Announcement not found" }, 404);
+    }
+
+    await kv.del(announcementId);
+    console.log(`Announcement deleted successfully: ${announcementId}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log(`Error deleting announcement: ${error}`);
+    return c.json({ error: `Failed to delete announcement: ${error.message}` }, 500);
+  }
+});
+
 // Create project (admin only)
 app.post("/make-server-97d3df46/projects", async (c) => {
   try {

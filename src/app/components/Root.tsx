@@ -32,9 +32,9 @@ export default function Root() {
     <div className="min-h-screen bg-gray-50">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
       {isAdminRoute ? (
-        <div className="flex min-h-screen">
+        <div className="flex h-screen overflow-hidden">
           <aside
-            className="flex shrink-0 flex-col justify-between bg-white px-8 py-10"
+            className="flex h-screen shrink-0 flex-col justify-between overflow-hidden bg-white px-8 py-10"
             style={{ width: "412px", borderRight: "10px solid #1350A3", fontFamily: "'Poppins', sans-serif" }}
           >
             <div className="flex flex-1 flex-col">
@@ -142,7 +142,7 @@ export default function Root() {
             </button>
           </aside>
 
-          <main className="min-w-0 flex-1">
+          <main className="min-w-0 flex-1 overflow-y-auto">
             <Outlet />
           </main>
         </div>

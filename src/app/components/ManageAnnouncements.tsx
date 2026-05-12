@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Megaphone, Plus, Trash2, Calendar } from "lucide-react";
+import { Megaphone, Plus, Trash2, Calendar, Pencil } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Announcement {
@@ -19,6 +19,7 @@ export default function ManageAnnouncements() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -64,8 +65,9 @@ export default function ManageAnnouncements() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/announcements`, {
-        method: "POST",
+      const isEditing = Boolean(editingAnnouncementId);
+      const response = await fetch(isEditing ? `${API_URL}/announcements/${editingAnnouncementId}` : `${API_URL}/announcements`, {
+        method: isEditing ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -76,32 +78,88 @@ export default function ManageAnnouncements() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create announcement");
+        throw new Error(data.error || `Failed to ${isEditing ? "update" : "create"} announcement`);
       }
 
-      setSuccess("Announcement created successfully!");
+      setSuccess(`Announcement ${isEditing ? "updated" : "created"} successfully!`);
       setFormData({ title: "", content: "", imageUrl: "" });
+      setEditingAnnouncementId(null);
       setShowForm(false);
       fetchAnnouncements();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      console.error("Error creating announcement:", err);
-      setError(err.message || "Failed to create announcement");
+      console.error("Error saving announcement:", err);
+      setError(err.message || "Failed to save announcement");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleEdit = (announcement: Announcement) => {
+    setEditingAnnouncementId(announcement.id);
+    setFormData({
+      title: announcement.title,
+      content: announcement.content,
+      imageUrl: announcement.imageUrl,
+    });
+    setShowForm(true);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleDelete = async (announcementId: string) => {
+    const confirmed = window.confirm("Delete this announcement?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/announcements/${announcementId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete announcement");
+      }
+
+      setAnnouncements((prev) => prev.filter((announcement) => announcement.id !== announcementId));
+      if (editingAnnouncementId === announcementId) {
+        setEditingAnnouncementId(null);
+        setFormData({ title: "", content: "", imageUrl: "" });
+        setShowForm(false);
+      }
+    } catch (err: any) {
+      console.error("Error deleting announcement:", err);
+      setError(err.message || "Failed to delete announcement");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Manage Announcements</h1>
-            <p className="text-gray-600">Create and manage barangay announcements</p>
+          <div className="flex-1">
+            {showForm && (
+              <h1
+                className="text-center text-gray-900"
+                style={{ fontFamily: "'Mate SC', serif", fontSize: "40px", fontWeight: 400 }}
+              >
+                {editingAnnouncementId ? "Edit Announcement" : "Create Announcement"}
+              </h1>
+            )}
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false);
+                setEditingAnnouncementId(null);
+                setFormData({ title: "", content: "", imageUrl: "" });
+              } else {
+                setShowForm(true);
+              }
+            }}
             className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
           >
             <Plus className="w-5 h-5" />
@@ -125,7 +183,7 @@ export default function ManageAnnouncements() {
           <div className="bg-white rounded-lg shadow-md p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <Megaphone className="w-6 h-6" />
-              Create New Announcement
+              {editingAnnouncementId ? "Edit Announcement" : "Create New Announcement"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -178,7 +236,7 @@ export default function ManageAnnouncements() {
                 disabled={submitting}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Creating..." : "Create Announcement"}
+                {submitting ? (editingAnnouncementId ? "Saving..." : "Creating...") : (editingAnnouncementId ? "Save Changes" : "Create Announcement")}
               </button>
             </form>
           </div>
@@ -195,7 +253,7 @@ export default function ManageAnnouncements() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {announcements.map((announcement) => (
-                <div key={announcement.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
+                <div key={announcement.id} className="relative border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
                   {announcement.imageUrl && (
                     <img
                       src={announcement.imageUrl}
@@ -203,13 +261,33 @@ export default function ManageAnnouncements() {
                       className="w-full h-48 object-cover"
                     />
                   )}
-                  <div className="p-6">
+                  <div className="p-6 pb-16">
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                       <Calendar className="w-4 h-4" />
                       {new Date(announcement.createdAt).toLocaleDateString()}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{announcement.title}</h3>
                     <p className="text-gray-600">{announcement.content}</p>
+                    <div className="absolute right-4 bottom-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(announcement)}
+                        className="text-gray-700 transition hover:text-blue-600"
+                        style={{ background: "none", border: "none" }}
+                        aria-label="Edit announcement"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(announcement.id)}
+                        className="text-gray-700 transition hover:text-red-600"
+                        style={{ background: "none", border: "none" }}
+                        aria-label="Delete announcement"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
