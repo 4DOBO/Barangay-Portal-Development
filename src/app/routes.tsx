@@ -4,6 +4,8 @@ import Homepage from "./components/Homepage";
 import ReportsDashboard from "./components/ReportsDashboard";
 import ManageAnnouncements from "./components/ManageAnnouncements";
 import ManageProjects from "./components/ManageProjects";
+import ManageAyuda from "./components/ManageAyuda";
+import AyudaApplications from "./components/AyudaApplications";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import SubmitReport from "./components/SubmitReport";
@@ -18,6 +20,8 @@ export const router = createBrowserRouter([
       { path: "admin/reports", Component: ReportsDashboard },
       { path: "admin/announcements", Component: ManageAnnouncements },
       { path: "admin/projects", Component: ManageProjects },
+      { path: "admin/ayuda", Component: ManageAyuda },
+      { path: "admin/ayuda-applications", Component: AyudaApplications },
     ],
   },
   // ↓ Outside Root — no header/footer
