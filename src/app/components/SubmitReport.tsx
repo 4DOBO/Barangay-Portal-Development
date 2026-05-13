@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { FileText, MapPin, User, Phone } from "lucide-react";
-import { API_URL, publicAnonKey } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 export default function SubmitReport() {
   const navigate = useNavigate();
@@ -22,20 +22,26 @@ export default function SubmitReport() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/reports`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${publicAnonKey}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to submit report");
+      // Get the current user session — reports require user_id
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to submit a report. Please log in first.");
       }
+
+      // Map the form data to the reports table schema
+      const dbData = {
+        user_id: session.user.id,
+        issue_type: formData.category || "other",
+        description: `[${formData.title}]\n${formData.description}\n\nContact: ${formData.contactName || "Anonymous"} (${formData.contactPhone || "None"})`,
+        location: formData.location,
+        status: "pending",
+      };
+
+      const { error: insertError } = await supabase
+        .from("reports")
+        .insert([dbData]);
+
+      if (insertError) throw insertError;
 
       alert("Report submitted successfully! We will review it shortly.");
       navigate("/");

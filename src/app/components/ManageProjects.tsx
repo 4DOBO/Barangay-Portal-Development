@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { FolderKanban, Plus, Calendar, Pencil, Trash2 } from "lucide-react";
-import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 interface Project {
   id: string;
@@ -50,11 +50,24 @@ export default function ManageProjects() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${API_URL}/projects`, {
-        headers: { Authorization: `Bearer ${publicAnonKey}` },
-      });
-      const data = await response.json();
-      setProjects(data.projects || []);
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mapped: Project[] = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          imageUrl: p.image_url || "",
+          status: p.status,
+          createdAt: p.created_at,
+        }));
+        setProjects(mapped);
+      }
     } catch (error) {
       console.error("Error fetching projects:", error);
     }
@@ -68,19 +81,24 @@ export default function ManageProjects() {
 
     try {
       const isEditing = Boolean(editingProjectId);
-      const response = await fetch(isEditing ? `${API_URL}/projects/${editingProjectId}` : `${API_URL}/projects`, {
-        method: isEditing ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const dbData = {
+        title: formData.title,
+        description: formData.description,
+        image_url: formData.imageUrl,
+        status: formData.status,
+      };
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to ${isEditing ? "update" : "create"} project`);
+      if (isEditing) {
+        const { error: updateError } = await supabase
+          .from("projects")
+          .update(dbData)
+          .eq("id", editingProjectId);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("projects")
+          .insert([dbData]);
+        if (insertError) throw insertError;
       }
 
       setSuccess(`Project ${isEditing ? "updated" : "created"} successfully!`);
@@ -115,17 +133,12 @@ export default function ManageProjects() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_URL}/projects/${projectId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const { error: deleteError } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete project");
-      }
+      if (deleteError) throw deleteError;
 
       setProjects((prev) => prev.filter((project) => project.id !== projectId));
       if (editingProjectId === projectId) {

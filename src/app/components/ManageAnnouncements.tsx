@@ -1,31 +1,40 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Megaphone, Plus, Trash2, Calendar, Pencil } from "lucide-react";
-import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
+import { Megaphone, Plus, Trash2, Calendar, Pencil, Clock, Tag } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
-interface Announcement {
+interface Update {
   id: string;
   title: string;
-  content: string;
-  imageUrl: string;
+  category: string;
+  description: string;
+  eventDate: string;
+  eventTime: string;
+  author: string;
+  priority: string;
   createdAt: string;
 }
 
 export default function ManageAnnouncements() {
   const navigate = useNavigate();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [updates, setUpdates] = useState<Update[]>([]);
   const [accessToken, setAccessToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("Admin");
 
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     title: "",
-    content: "",
-    imageUrl: "",
-  });
+    category: "Announcement",
+    description: "",
+    eventDate: "",
+    eventTime: "",
+    priority: "low",
+  };
+  const [formData, setFormData] = useState(emptyForm);
 
   useEffect(() => {
     checkAuth();
@@ -33,7 +42,7 @@ export default function ManageAnnouncements() {
 
   useEffect(() => {
     if (accessToken) {
-      fetchAnnouncements();
+      fetchUpdates();
     }
   }, [accessToken]);
 
@@ -43,18 +52,39 @@ export default function ManageAnnouncements() {
       navigate("/login");
       return;
     }
+    const name =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.name ||
+      session.user.email?.split("@")[0] || "Admin";
+    setDisplayName(name);
     setAccessToken(session.access_token);
   };
 
-  const fetchAnnouncements = async () => {
+  const fetchUpdates = async () => {
     try {
-      const response = await fetch(`${API_URL}/announcements`, {
-        headers: { Authorization: `Bearer ${publicAnonKey}` },
-      });
-      const data = await response.json();
-      setAnnouncements(data.announcements || []);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
+      const { data, error } = await supabase
+        .from("updates")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mapped: Update[] = data.map((u: any) => ({
+          id: u.id,
+          title: u.title,
+          category: u.category,
+          description: u.description,
+          eventDate: u.event_date || "",
+          eventTime: u.event_time || "",
+          author: u.author,
+          priority: u.priority,
+          createdAt: u.created_at,
+        }));
+        setUpdates(mapped);
+      }
+    } catch (err) {
+      console.error("Error fetching updates:", err);
     }
   };
 
@@ -65,74 +95,96 @@ export default function ManageAnnouncements() {
     setSubmitting(true);
 
     try {
-      const isEditing = Boolean(editingAnnouncementId);
-      const response = await fetch(isEditing ? `${API_URL}/announcements/${editingAnnouncementId}` : `${API_URL}/announcements`, {
-        method: isEditing ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const isEditing = Boolean(editingId);
+      const dbData = {
+        title: formData.title,
+        category: formData.category,
+        description: formData.description,
+        event_date: formData.eventDate || null,
+        event_time: formData.eventTime || null,
+        author: displayName,
+        priority: formData.priority,
+      };
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to ${isEditing ? "update" : "create"} announcement`);
+      if (isEditing) {
+        const { error: updateError } = await supabase
+          .from("updates")
+          .update(dbData)
+          .eq("id", editingId);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("updates")
+          .insert([dbData]);
+        if (insertError) throw insertError;
       }
 
-      setSuccess(`Announcement ${isEditing ? "updated" : "created"} successfully!`);
-      setFormData({ title: "", content: "", imageUrl: "" });
-      setEditingAnnouncementId(null);
+      setSuccess(`Update ${isEditing ? "saved" : "published"} successfully!`);
+      setFormData(emptyForm);
+      setEditingId(null);
       setShowForm(false);
-      fetchAnnouncements();
+      fetchUpdates();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      console.error("Error saving announcement:", err);
-      setError(err.message || "Failed to save announcement");
+      console.error("Error saving update:", err);
+      setError(err.message || "Failed to save update");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleEdit = (announcement: Announcement) => {
-    setEditingAnnouncementId(announcement.id);
+  const handleEdit = (update: Update) => {
+    setEditingId(update.id);
     setFormData({
-      title: announcement.title,
-      content: announcement.content,
-      imageUrl: announcement.imageUrl,
+      title: update.title,
+      category: update.category,
+      description: update.description,
+      eventDate: update.eventDate,
+      eventTime: update.eventTime,
+      priority: update.priority,
     });
     setShowForm(true);
     setError("");
     setSuccess("");
   };
 
-  const handleDelete = async (announcementId: string) => {
-    const confirmed = window.confirm("Delete this announcement?");
+  const handleDelete = async (updateId: string) => {
+    const confirmed = window.confirm("Delete this update?");
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_URL}/announcements/${announcementId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const { error: deleteError } = await supabase
+        .from("updates")
+        .delete()
+        .eq("id", updateId);
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete announcement");
-      }
+      if (deleteError) throw deleteError;
 
-      setAnnouncements((prev) => prev.filter((announcement) => announcement.id !== announcementId));
-      if (editingAnnouncementId === announcementId) {
-        setEditingAnnouncementId(null);
-        setFormData({ title: "", content: "", imageUrl: "" });
+      setUpdates((prev) => prev.filter((u) => u.id !== updateId));
+      if (editingId === updateId) {
+        setEditingId(null);
+        setFormData(emptyForm);
         setShowForm(false);
       }
     } catch (err: any) {
-      console.error("Error deleting announcement:", err);
-      setError(err.message || "Failed to delete announcement");
+      console.error("Error deleting update:", err);
+      setError(err.message || "Failed to delete update");
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "high": return "bg-red-100 text-red-800";
+      case "medium": return "bg-orange-100 text-orange-800";
+      default: return "bg-green-100 text-green-800";
+    }
+  };
+
+  const getCategoryBadge = (category: string) => {
+    switch (category.toLowerCase()) {
+      case "event": return "bg-purple-100 text-purple-800";
+      case "notice": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-blue-100 text-blue-800";
     }
   };
 
@@ -144,15 +196,15 @@ export default function ManageAnnouncements() {
           <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#1350A3] bg-transparent p-5 md:p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h1 className="text-xl font-bold text-gray-900 mb-1">Announcements</h1>
-                <p className="text-sm text-gray-600">Manage public announcements for Barangay Maligaya.</p>
+                <h1 className="text-xl font-bold text-gray-900 mb-1">Updates & Announcements</h1>
+                <p className="text-sm text-gray-600">Manage public updates, announcements, and notices for the community.</p>
               </div>
               <button
                 onClick={() => {
                   if (showForm) {
                     setShowForm(false);
-                    setEditingAnnouncementId(null);
-                    setFormData({ title: "", content: "", imageUrl: "" });
+                    setEditingId(null);
+                    setFormData(emptyForm);
                   } else {
                     setShowForm(true);
                   }
@@ -160,18 +212,30 @@ export default function ManageAnnouncements() {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
                 <Plus className="w-5 h-5" />
-                {showForm ? "Cancel" : "New Announcement"}
+                {showForm ? "Cancel" : "New Update"}
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
                 <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Published</p>
-                  <p className="text-xl font-bold text-gray-900">{announcements.length}</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Updates</p>
+                  <p className="text-xl font-bold text-gray-900">{updates.length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-purple-100 text-purple-600 rounded-md border border-[#1350A3]">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Events</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {updates.filter(u => u.category.toLowerCase() === "event").length}
+                  </p>
                 </div>
               </div>
 
@@ -182,7 +246,7 @@ export default function ManageAnnouncements() {
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Latest Update</p>
                   <p className="text-xl font-bold text-gray-900">
-                    {announcements.length > 0 ? new Date(Math.max(...announcements.map(a => new Date(a.createdAt).getTime()))).toLocaleDateString() : "N/A"}
+                    {updates.length > 0 ? new Date(Math.max(...updates.map(u => new Date(u.createdAt).getTime()))).toLocaleDateString() : "N/A"}
                   </p>
                 </div>
               </div>
@@ -206,7 +270,7 @@ export default function ManageAnnouncements() {
           <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <Megaphone className="w-5 h-5" />
-              {editingAnnouncementId ? "Edit Announcement" : "Create New Announcement"}
+              {editingId ? "Edit Update" : "Create New Update"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -221,37 +285,85 @@ export default function ManageAnnouncements() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Announcement title"
+                  placeholder="Update title"
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Announcement">Announcement</option>
+                    <option value="Event">Event</option>
+                    <option value="Notice">Notice</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="priority" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Priority
+                  </label>
+                  <select
+                    id="priority"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label htmlFor="content" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Content *
+                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description *
                 </label>
                 <textarea
-                  id="content"
+                  id="description"
                   required
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={5}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Announcement content"
+                  placeholder="Update description"
                 />
               </div>
 
-              <div>
-                <label htmlFor="imageUrl" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Image URL (Optional)
-                </label>
-                <input
-                  type="url"
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/image.jpg"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="eventDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Event Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    id="eventDate"
+                    value={formData.eventDate}
+                    onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="eventTime" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Event Time (Optional)
+                  </label>
+                  <input
+                    type="time"
+                    id="eventTime"
+                    value={formData.eventTime}
+                    onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
               <button
@@ -259,54 +371,73 @@ export default function ManageAnnouncements() {
                 disabled={submitting}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
-                {submitting ? (editingAnnouncementId ? "Saving..." : "Creating...") : (editingAnnouncementId ? "Save Changes" : "Create Announcement")}
+                {submitting ? (editingId ? "Saving..." : "Publishing...") : (editingId ? "Save Changes" : "Publish Update")}
               </button>
             </form>
           </div>
         )}
 
         <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">All Announcements</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">All Updates</h2>
 
-          {announcements.length === 0 ? (
+          {updates.length === 0 ? (
             <div className="text-center py-12">
               <Megaphone className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No announcements yet. Create your first one!</p>
+              <p className="text-gray-500">No updates yet. Publish your first one!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {announcements.map((announcement) => (
-                <div key={announcement.id} className="relative border border-[#1350A3] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_#1350A3] transition">
-                  {announcement.imageUrl && (
-                    <img
-                      src={announcement.imageUrl}
-                      alt={announcement.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
+              {updates.map((update) => (
+                <div key={update.id} className="relative border border-[#1350A3] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_#1350A3] transition">
+                  {/* Priority bar */}
+                  <div className={`h-1.5 w-full ${update.priority === "high" ? "bg-red-500" : update.priority === "medium" ? "bg-orange-500" : "bg-green-500"}`} />
                   <div className="p-6 pb-16">
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(announcement.createdAt).toLocaleDateString()}
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${getCategoryBadge(update.category)}`}>
+                        {update.category}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${getPriorityBadge(update.priority)}`}>
+                        {update.priority}
+                      </span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{announcement.title}</h3>
-                    <p className="text-sm text-gray-600">{announcement.content}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{update.title}</h3>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-3">{update.description}</p>
+                    
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                      {update.eventDate && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {new Date(update.eventDate).toLocaleDateString()}
+                        </div>
+                      )}
+                      {update.eventTime && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {update.eventTime.slice(0, 5)}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5" />
+                        By {update.author}
+                      </div>
+                    </div>
+
                     <div className="absolute right-4 bottom-4 flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => handleEdit(announcement)}
+                        onClick={() => handleEdit(update)}
                         className="text-gray-700 transition hover:text-blue-600"
                         style={{ background: "none", border: "none" }}
-                        aria-label="Edit announcement"
+                        aria-label="Edit update"
                       >
                         <Pencil className="w-5 h-5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(announcement.id)}
+                        onClick={() => handleDelete(update.id)}
                         className="text-gray-700 transition hover:text-red-600"
                         style={{ background: "none", border: "none" }}
-                        aria-label="Delete announcement"
+                        aria-label="Delete update"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

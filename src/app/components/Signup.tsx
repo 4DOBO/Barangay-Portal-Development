@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Lock, Mail, User } from "lucide-react";
-import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
 import sampleLogo from "../../assets/Sample Barangay Logo.png";
 
@@ -36,6 +36,22 @@ export default function Signup() {
 
       if (error) {
         throw error;
+      }
+
+      // Create a profile row for the new user
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert([{
+            id: data.user.id,
+            email: formData.email,
+            full_name: formData.name,
+            role: "admin",
+          }]);
+
+        if (profileError) {
+          console.warn("Profile creation note:", profileError.message);
+        }
       }
 
       setSuccess("Account created successfully! Redirecting to login...");

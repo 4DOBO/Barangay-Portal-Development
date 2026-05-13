@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { API_URL, publicAnonKey } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
 import sampleLogo from "../../assets/Sample Barangay Logo.png"
 import manilaLogo from "../../assets/Manila.png"
@@ -9,8 +9,11 @@ import manilaLogo from "../../assets/Manila.png"
 interface Announcement {
   id: string;
   title: string;
-  content: string;
-  imageUrl: string;
+  category: string;
+  description: string;
+  eventDate: string;
+  author: string;
+  priority: string;
   createdAt: string;
 }
 
@@ -23,14 +26,16 @@ interface Project {
   createdAt: string;
 }
 
-interface AyudaAnnouncement {
+interface AyudaProgram {
   id: string;
   title: string;
-  shortDescription: string;
-  date: string;
-  requirements: string;
-  distributionMode: "online" | "face_to_face";
-  imageUrl: string;
+  description: string;
+  amount: number;
+  status: string;
+  startDate: string;
+  endDate: string;
+  distribution: string;
+  eligibility: string;
   createdAt: string;
 }
 
@@ -39,12 +44,12 @@ const CARDS_PER_VIEW = 3;
 export default function Homepage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [ayudaAnnouncements, setAyudaAnnouncements] = useState<AyudaAnnouncement[]>([]);
+  const [ayudaPrograms, setAyudaPrograms] = useState<AyudaProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [projectIndex, setProjectIndex] = useState(0);
   const [ayudaIndex, setAyudaIndex] = useState(0);
-  const [selectedAyuda, setSelectedAyuda] = useState<AyudaAnnouncement | null>(null);
+  const [selectedAyuda, setSelectedAyuda] = useState<AyudaProgram | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -53,24 +58,49 @@ export default function Homepage() {
   const fetchData = async () => {
     try {
       const [announcementsRes, projectsRes, ayudaRes] = await Promise.all([
-        fetch(`${API_URL}/announcements`, {
-          headers: { Authorization: `Bearer ${publicAnonKey}` },
-        }),
-        fetch(`${API_URL}/projects`, {
-          headers: { Authorization: `Bearer ${publicAnonKey}` },
-        }),
-        fetch(`${API_URL}/ayuda`, {
-          headers: { Authorization: `Bearer ${publicAnonKey}` },
-        }),
+        supabase.from("updates").select("*").order("created_at", { ascending: false }),
+        supabase.from("projects").select("*").order("created_at", { ascending: false }),
+        supabase.from("ayuda_programs").select("*").order("created_at", { ascending: false }),
       ]);
 
-      const announcementsData = await announcementsRes.json();
-      const projectsData = await projectsRes.json();
-      const ayudaData = await ayudaRes.json();
+      if (announcementsRes.data) {
+        setAnnouncements(announcementsRes.data.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          category: a.category,
+          description: a.description,
+          eventDate: a.event_date || "",
+          author: a.author,
+          priority: a.priority,
+          createdAt: a.created_at,
+        })));
+      }
 
-      setAnnouncements(announcementsData.announcements || []);
-      setProjects(projectsData.projects || []);
-      setAyudaAnnouncements(ayudaData.ayuda || []);
+      if (projectsRes.data) {
+        setProjects(projectsRes.data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          imageUrl: p.image_url || "",
+          status: p.status,
+          createdAt: p.created_at,
+        })));
+      }
+
+      if (ayudaRes.data) {
+        setAyudaPrograms(ayudaRes.data.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          description: a.description,
+          amount: a.amount,
+          status: a.status || "upcoming",
+          startDate: a.start_date || "",
+          endDate: a.end_date || "",
+          distribution: a.distribution,
+          eligibility: a.eligibility,
+          createdAt: a.created_at,
+        })));
+      }
     } catch (error) {
       console.error("Error fetching homepage data:", error);
     } finally {
@@ -222,18 +252,26 @@ export default function Homepage() {
                 }`}>
                 {announcements.slice(announcementIndex, announcementIndex + CARDS_PER_VIEW).map((announcement) => (
                   <div key={announcement.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
-                    <img
-                      src={announcement.imageUrl || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&h=400&fit=crop"}
-                      alt={announcement.title}
-                      className="w-full h-44 sm:h-48 object-cover"
-                    />
+                    <div className={`h-2 w-full ${announcement.priority === 'high' ? 'bg-red-500' : announcement.priority === 'medium' ? 'bg-orange-500' : 'bg-green-500'}`} />
                     <div className="p-4 sm:p-5">
-                      <div className="flex items-center gap-2 text-sm text-blue-600 mb-2 font-medium">
-                        <Calendar className="w-4 h-4 shrink-0" />
-                        {new Date(announcement.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                          announcement.category?.toLowerCase() === 'event' ? 'bg-purple-100 text-purple-800' :
+                          announcement.category?.toLowerCase() === 'notice' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {announcement.category}
+                        </span>
+                        <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
+                          <Calendar className="w-4 h-4 shrink-0" />
+                          {announcement.eventDate ? new Date(announcement.eventDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date(announcement.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </div>
                       </div>
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>{announcement.title}</h3>
-                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-3" style={{ fontFamily: "'Poppins', sans-serif" }}>{announcement.content}</p>
+                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-3" style={{ fontFamily: "'Poppins', sans-serif" }}>{announcement.description}</p>
+                      {announcement.author && (
+                        <p className="text-xs text-gray-500 mt-3" style={{ fontFamily: "'Poppins', sans-serif" }}>Posted by: {announcement.author}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -315,56 +353,52 @@ export default function Homepage() {
       <section id="ayuda" className="relative z-10 py-20" style={{ backgroundColor: 'rgba(255, 255, 255, 0.75)', marginTop: 30 }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Mate SC', serif", fontSize: '48px', fontWeight: '400', color: '#000000', lineHeight: 1, WebkitTextStroke: '1px #000000' }}>AYUDA ANNOUNCEMENTS</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Mate SC', serif", fontSize: '48px', fontWeight: '400', color: '#000000', lineHeight: 1, WebkitTextStroke: '1px #000000' }}>AYUDA PROGRAMS</h2>
             <p className="text-xl text-gray-600" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Stay updated on ayuda programs and distributions</p>
           </div>
 
           {loading ? (
-            <div className="text-center py-12 text-gray-500" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Loading ayuda announcements...</div>
-          ) : ayudaAnnouncements.length === 0 ? (
+            <div className="text-center py-12 text-gray-500" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Loading ayuda programs...</div>
+          ) : ayudaPrograms.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-md">
-              <p className="text-gray-500 text-lg" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>No ayuda announcements yet.</p>
+              <p className="text-gray-500 text-lg" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>No ayuda programs yet.</p>
             </div>
           ) : (
             <>
               {renderCarouselControls(
-                ayudaAnnouncements.length,
+                ayudaPrograms.length,
                 ayudaIndex,
-                () => moveCarousel("prev", ayudaAnnouncements.length, ayudaIndex, setAyudaIndex),
-                () => moveCarousel("next", ayudaAnnouncements.length, ayudaIndex, setAyudaIndex),
+                () => moveCarousel("prev", ayudaPrograms.length, ayudaIndex, setAyudaIndex),
+                () => moveCarousel("next", ayudaPrograms.length, ayudaIndex, setAyudaIndex),
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {ayudaAnnouncements.slice(ayudaIndex, ayudaIndex + CARDS_PER_VIEW).map((ayuda) => (
+                {ayudaPrograms.slice(ayudaIndex, ayudaIndex + CARDS_PER_VIEW).map((ayuda) => (
                   <button
                     key={ayuda.id}
                     type="button"
-                    onClick={() => {
-                      if (ayuda.distributionMode === "face_to_face") {
-                        setSelectedAyuda(ayuda);
-                      }
-                    }}
-                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left disabled:cursor-default"
-                    disabled={ayuda.distributionMode !== "face_to_face"}
+                    onClick={() => setSelectedAyuda(ayuda)}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left"
                   >
-                    <img
-                      src={ayuda.imageUrl || "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&h=400&fit=crop"}
-                      alt={ayuda.title}
-                      className="w-full h-56 object-cover"
-                    />
+                    <div className="h-4 w-full" style={{ backgroundColor: ayuda.status === 'active' ? '#16a34a' : ayuda.status === 'upcoming' ? '#2563eb' : '#6b7280' }} />
                     <div className="p-6">
-                      <div className="flex items-center gap-2 text-sm text-blue-600 mb-3 font-medium">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(ayuda.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${ayuda.status === 'active' ? 'bg-green-100 text-green-800' : ayuda.status === 'upcoming' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                          {ayuda.status}
+                        </span>
+                        <span className="text-lg font-bold text-[#1350A3]">₱{ayuda.amount.toLocaleString()}</span>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mb-3">{ayuda.title}</h3>
-                      <p className="text-gray-600 leading-relaxed line-clamp-2 mb-2">{ayuda.shortDescription}</p>
-                      <p className="text-sm text-gray-700 mb-1"><span className="font-semibold">Mode:</span> {ayuda.distributionMode === "online" ? "Online" : "Face-to-Face"}</p>
-                      <p className="text-sm text-gray-700 line-clamp-2"><span className="font-semibold">Requirements:</span> {ayuda.requirements}</p>
-                      {ayuda.distributionMode === "online" ? (
-                        <p className="mt-3 text-sm font-semibold text-[#1350A3]">Online application is available on mobile.</p>
-                      ) : (
-                        <p className="mt-3 text-sm font-semibold text-[#1350A3]">Click to view full ayuda details.</p>
+                      <p className="text-gray-600 leading-relaxed line-clamp-2 mb-2">{ayuda.description}</p>
+                      <p className="text-sm text-gray-700 mb-1"><span className="font-semibold">Distribution:</span> {ayuda.distribution}</p>
+                      <p className="text-sm text-gray-700 line-clamp-2"><span className="font-semibold">Eligibility:</span> {ayuda.eligibility}</p>
+                      {ayuda.startDate && (
+                        <div className="flex items-center gap-2 text-sm text-blue-600 mt-3 font-medium">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(ayuda.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          {ayuda.endDate && ` — ${new Date(ayuda.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                        </div>
                       )}
+                      <p className="mt-3 text-sm font-semibold text-[#1350A3]">Click to view full details</p>
                     </div>
                   </button>
                 ))}
@@ -380,9 +414,12 @@ export default function Homepage() {
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900">{selectedAyuda.title}</h3>
-                <p className="mt-2 text-sm font-medium text-[#1350A3]">
-                  {new Date(selectedAyuda.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedAyuda.status === 'active' ? 'bg-green-100 text-green-800' : selectedAyuda.status === 'upcoming' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                    {selectedAyuda.status}
+                  </span>
+                  <span className="text-lg font-bold text-[#1350A3]">₱{selectedAyuda.amount.toLocaleString()}</span>
+                </div>
               </div>
               <button
                 type="button"
@@ -392,9 +429,12 @@ export default function Homepage() {
                 Close
               </button>
             </div>
-            <p className="mb-4 text-gray-700">{selectedAyuda.shortDescription}</p>
-            <p className="mb-2 text-sm text-gray-700"><span className="font-semibold">Distribution Mode:</span> Face-to-Face</p>
-            <p className="text-sm text-gray-700"><span className="font-semibold">Requirements:</span> {selectedAyuda.requirements}</p>
+            <p className="mb-4 text-gray-700">{selectedAyuda.description}</p>
+            <p className="mb-2 text-sm text-gray-700"><span className="font-semibold">Distribution:</span> {selectedAyuda.distribution}</p>
+            <p className="mb-2 text-sm text-gray-700"><span className="font-semibold">Eligibility:</span> {selectedAyuda.eligibility}</p>
+            {selectedAyuda.startDate && (
+              <p className="text-sm text-gray-700"><span className="font-semibold">Period:</span> {new Date(selectedAyuda.startDate).toLocaleDateString()} — {selectedAyuda.endDate ? new Date(selectedAyuda.endDate).toLocaleDateString() : 'TBD'}</p>
+            )}
           </div>
         </div>
       )}

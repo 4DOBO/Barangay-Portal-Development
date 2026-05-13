@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { FileText, MapPin, User, Phone, Calendar, Mail, Trash2, Activity, CheckCircle, Hash, ShieldAlert } from "lucide-react";
-import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 interface Report {
   id: string;
@@ -11,12 +11,12 @@ interface Report {
   location: string;
   contactName: string;
   contactPhone: string;
-  status: "pending" | "in_progress" | "done";
+  status: "pending" | "in-progress" | "completed";
   createdAt: string;
   updatedAt: string;
 }
 
-type FilterStatus = "primary" | "pending" | "in_progress" | "done";
+type FilterStatus = "primary" | "pending" | "in-progress" | "completed";
 
 export default function ReportsDashboard() {
   const navigate = useNavigate();
@@ -58,13 +58,28 @@ export default function ReportsDashboard() {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch(`${API_URL}/reports`, {
-        headers: { Authorization: `Bearer ${publicAnonKey}` },
-      });
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      const data = await response.json();
-      if (data.success) {
-        setReports(data.reports || []);
+      if (error) throw error;
+
+      if (data) {
+        const mappedReports: Report[] = data.map((r: any) => ({
+          id: r.id,
+          title: `${r.issue_type} Issue`,
+          description: r.description || "",
+          category: r.issue_type || "other",
+          location: r.location || "",
+          contactName: "Anonymous Reporter",
+          contactPhone: "",
+          status: r.status,
+          createdAt: r.created_at,
+          updatedAt: r.created_at,
+        }));
+        setReports(mappedReports);
       }
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -81,22 +96,14 @@ export default function ReportsDashboard() {
     }
   };
 
-  const updateReportStatus = async (reportId: string, newStatus: "pending" | "in_progress" | "done") => {
+  const updateReportStatus = async (reportId: string, newStatus: "pending" | "in-progress" | "completed") => {
     try {
-      const response = await fetch(`${API_URL}/reports/${reportId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      const { error } = await supabase
+        .from("reports")
+        .update({ status: newStatus })
+        .eq("id", reportId);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update report");
-      }
+      if (error) throw error;
 
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r))
@@ -112,18 +119,12 @@ export default function ReportsDashboard() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_URL}/reports/${reportId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const { error } = await supabase
+        .from("reports")
+        .delete()
+        .eq("id", reportId);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete report");
-      }
+      if (error) throw error;
 
       setReports((prev) => prev.filter((report) => report.id !== reportId));
     } catch (error: any) {
@@ -136,9 +137,9 @@ export default function ReportsDashboard() {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "in_progress":
+      case "in-progress":
         return "bg-blue-100 text-blue-800";
-      case "done":
+      case "completed":
         return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -149,10 +150,10 @@ export default function ReportsDashboard() {
     switch (status) {
       case "pending":
         return "Pending";
-      case "in_progress":
+      case "in-progress":
         return "In Progress";
-      case "done":
-        return "Done";
+      case "completed":
+        return "Completed";
       default:
         return status;
     }
@@ -202,7 +203,7 @@ export default function ReportsDashboard() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">In Progress</p>
-                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "in_progress").length}</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "in-progress").length}</p>
                 </div>
               </div>
 
@@ -212,7 +213,7 @@ export default function ReportsDashboard() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Resolved</p>
-                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "done").length}</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "completed").length}</p>
                 </div>
               </div>
             </div>
@@ -238,15 +239,15 @@ export default function ReportsDashboard() {
               Pending
             </button>
             <button
-              onClick={() => setActiveFilter("in_progress")}
-              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "in_progress" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+              onClick={() => setActiveFilter("in-progress")}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "in-progress" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
                 }`}
             >
               In Progress
             </button>
             <button
-              onClick={() => setActiveFilter("done")}
-              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "done" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+              onClick={() => setActiveFilter("completed")}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "completed" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
                 }`}
             >
               Resolved
@@ -343,9 +344,9 @@ export default function ReportsDashboard() {
                           <ShieldAlert className="w-4 h-4" /> Pending
                         </button>
                         <button
-                          onClick={() => updateReportStatus(report.id, "in_progress")}
-                          disabled={report.status === "in_progress"}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "in_progress"
+                          onClick={() => updateReportStatus(report.id, "in-progress")}
+                          disabled={report.status === "in-progress"}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "in-progress"
                               ? "bg-blue-100 text-blue-800 border-[#1350A3] cursor-default"
                               : "bg-white border-[#1350A3] text-gray-900 hover:bg-blue-50 hover:text-blue-800"
                             }`}
@@ -353,9 +354,9 @@ export default function ReportsDashboard() {
                           <Activity className="w-4 h-4" /> In Progress
                         </button>
                         <button
-                          onClick={() => updateReportStatus(report.id, "done")}
-                          disabled={report.status === "done"}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "done"
+                          onClick={() => updateReportStatus(report.id, "completed")}
+                          disabled={report.status === "completed"}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "completed"
                               ? "bg-green-100 text-green-800 border-[#1350A3] cursor-default"
                               : "bg-white border-[#1350A3] text-gray-900 hover:bg-green-50 hover:text-green-800"
                             }`}
@@ -363,7 +364,7 @@ export default function ReportsDashboard() {
                           <CheckCircle className="w-4 h-4" /> Resolved
                         </button>
 
-                        {activeFilter === "done" && report.status === "done" && (
+                        {activeFilter === "completed" && report.status === "completed" && (
                           <>
                             <div className="h-px bg-[#1350A3] my-2 hidden xl:block"></div>
                             <button
