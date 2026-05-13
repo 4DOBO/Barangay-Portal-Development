@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { API_URL, supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
 import sampleLogo from "../../assets/Sample Barangay Logo.png"
 import manilaLogo from "../../assets/Manila.png"
@@ -52,6 +52,7 @@ export default function Homepage() {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [projectIndex, setProjectIndex] = useState(0);
   const [ayudaIndex, setAyudaIndex] = useState(0);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [selectedAyuda, setSelectedAyuda] = useState<AyudaProgram | null>(null);
 
   useEffect(() => {
@@ -60,41 +61,33 @@ export default function Homepage() {
 
   const fetchData = async () => {
     try {
-      const [announcementsRes, projectsRes, ayudaRes] = await Promise.all([
-        fetch(`${API_URL}/announcements`),
+      const [projectsRes, ayudaRes] = await Promise.all([
         supabase.from("projects").select("*").order("created_at", { ascending: false }),
         supabase.from("ayuda_programs").select("*").order("created_at", { ascending: false }),
       ]);
 
-      if (announcementsRes.ok) {
-        const result = await announcementsRes.json();
-        const overrides = (() => {
-          try {
-            return JSON.parse(localStorage.getItem(ANNOUNCEMENT_OVERRIDES_KEY) || "{}") as Record<string, Announcement>;
-          } catch {
-            return {};
-          }
-        })();
-        const hidden = (() => {
-          try {
-            return new Set(JSON.parse(localStorage.getItem(HIDDEN_ANNOUNCEMENTS_KEY) || "[]") as string[]);
-          } catch {
-            return new Set<string>();
-          }
-        })();
+      const overrides = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(ANNOUNCEMENT_OVERRIDES_KEY) || "{}") as Record<string, Announcement>;
+        } catch {
+          return {};
+        }
+      })();
+      const hidden = (() => {
+        try {
+          return new Set(JSON.parse(localStorage.getItem(HIDDEN_ANNOUNCEMENTS_KEY) || "[]") as string[]);
+        } catch {
+          return new Set<string>();
+        }
+      })();
 
-        setAnnouncements((result.announcements || []).map((announcement: any) => ({
-          id: announcement.id,
-          title: announcement.title,
-          category: announcement.category || "Announcement",
-          description: announcement.description || announcement.content || "",
-          eventDate: announcement.eventDate || "",
-          author: announcement.author || "Admin",
-          priority: announcement.priority || "low",
-          imageUrl: announcement.imageUrl || "",
-          createdAt: announcement.createdAt,
-        })).filter((announcement: Announcement) => !hidden.has(announcement.id)).map((announcement: Announcement) => overrides[announcement.id] || announcement));
-      }
+      const overrideAnnouncements = Object.values(overrides);
+
+      const dedupedAnnouncements = overrideAnnouncements
+        .filter((announcement) => !hidden.has(announcement.id))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setAnnouncements(dedupedAnnouncements);
 
       if (projectsRes.data) {
         setProjects(projectsRes.data.map((p: any) => ({
@@ -271,7 +264,12 @@ export default function Homepage() {
                   'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                 }`}>
                 {announcements.slice(announcementIndex, announcementIndex + CARDS_PER_VIEW).map((announcement) => (
-                  <div key={announcement.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                  <button
+                    key={announcement.id}
+                    type="button"
+                    onClick={() => setSelectedAnnouncement(announcement)}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left"
+                  >
                     <div className={`h-2 w-full ${announcement.priority === 'high' ? 'bg-red-500' : announcement.priority === 'medium' ? 'bg-orange-500' : 'bg-green-500'}`} />
                     {announcement.imageUrl && (
                       <img
@@ -298,8 +296,9 @@ export default function Homepage() {
                       {announcement.author && (
                         <p className="text-xs text-gray-500 mt-3" style={{ fontFamily: "'Poppins', sans-serif" }}>Posted by: {announcement.author}</p>
                       )}
+                      <p className="mt-3 text-sm font-semibold text-[#1350A3]" style={{ fontFamily: "'Poppins', sans-serif" }}>Click to view full details</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </>
@@ -433,6 +432,58 @@ export default function Homepage() {
           )}
         </div>
       </section>
+
+      {selectedAnnouncement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1350A3]/40 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedAnnouncement.category?.toLowerCase() === 'event' ? 'bg-purple-100 text-purple-800' :
+                    selectedAnnouncement.category?.toLowerCase() === 'notice' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                    {selectedAnnouncement.category}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedAnnouncement.priority === 'high' ? 'bg-red-100 text-red-800' :
+                    selectedAnnouncement.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                    {selectedAnnouncement.priority}
+                  </span>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900">{selectedAnnouncement.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAnnouncement(null)}
+                className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+            {selectedAnnouncement.imageUrl && (
+              <img
+                src={selectedAnnouncement.imageUrl}
+                alt={selectedAnnouncement.title}
+                className="mb-5 h-64 w-full rounded-xl object-cover"
+              />
+            )}
+            <p className="mb-4 text-gray-700">{selectedAnnouncement.description}</p>
+            <p className="mb-2 text-sm text-gray-700">
+              <span className="font-semibold">Date:</span>{" "}
+              {selectedAnnouncement.eventDate
+                ? new Date(selectedAnnouncement.eventDate).toLocaleDateString()
+                : new Date(selectedAnnouncement.createdAt).toLocaleDateString()}
+            </p>
+            {selectedAnnouncement.author && (
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Posted by:</span> {selectedAnnouncement.author}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {selectedAyuda && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1350A3]/40 px-4">

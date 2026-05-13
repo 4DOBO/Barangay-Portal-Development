@@ -142,31 +142,10 @@ export default function ManageAnnouncements() {
         setUpdates(mergeAnnouncements(mapped));
         return;
       }
-
-      const { data, error } = await supabase
-        .from("updates")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      const mapped: Update[] = (data || []).map((update: any) => ({
-        id: update.id,
-        title: update.title,
-        category: update.category || "Announcement",
-        description: update.description || "",
-        eventDate: update.event_date || "",
-        eventTime: update.event_time || "",
-        author: update.author || "Admin",
-        priority: update.priority || "low",
-        imageUrl: "",
-        createdAt: update.created_at,
-      }));
-      setUpdates(mergeAnnouncements(mapped));
+      setUpdates([]);
     } catch (err) {
       console.error("Error fetching updates:", err);
+      setUpdates([]);
     }
   };
 
@@ -178,11 +157,38 @@ export default function ManageAnnouncements() {
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
+        if (typeof reader.result !== "string") {
+          reject(new Error("Failed to read image file."));
           return;
         }
-        reject(new Error("Failed to read image file."));
+
+        const image = new Image();
+        image.onload = () => {
+          const maxWidth = 1200;
+          const maxHeight = 1200;
+          let { width, height } = image;
+
+          if (width > maxWidth || height > maxHeight) {
+            const scale = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+
+          if (!context) {
+            reject(new Error("Failed to process image file."));
+            return;
+          }
+
+          context.drawImage(image, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        image.onerror = () => reject(new Error("Failed to process image file."));
+        image.src = reader.result;
       };
       reader.onerror = () => reject(new Error("Failed to read image file."));
       reader.readAsDataURL(file);
@@ -274,6 +280,8 @@ export default function ManageAnnouncements() {
           if (updateError) {
             throw updateError;
           }
+
+          saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
         } else if (response.status === 404 && editingId?.startsWith("announcement_")) {
           saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
           setSuccess("Update saved successfully!");
@@ -299,12 +307,18 @@ export default function ManageAnnouncements() {
           }
           setSuccess("Update published successfully!");
         } else if (response.status === 404) {
-          const { error: insertError } = await supabase
+          const { data: insertedUpdate, error: insertError } = await supabase
             .from("updates")
-            .insert([legacyPayload]);
+            .insert([legacyPayload])
+            .select()
+            .single();
 
           if (insertError) {
             throw insertError;
+          }
+
+          if (insertedUpdate?.id) {
+            saveAnnouncementOverride(buildOverrideUpdate(insertedUpdate.id, imageUrl));
           }
         } else {
           const result = await response.json().catch(() => null);
