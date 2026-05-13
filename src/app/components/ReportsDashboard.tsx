@@ -59,9 +59,16 @@ export default function ReportsDashboard() {
   const fetchReports = async () => {
     try {
       setLoading(true);
+      // 1. Updated query to join the 'profiles' table using the foreign key
       const { data, error } = await supabase
         .from("reports")
-        .select("*")
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            phone
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -73,8 +80,9 @@ export default function ReportsDashboard() {
           description: r.description || "",
           category: r.issue_type || "other",
           location: r.location || "",
-          contactName: "Anonymous Reporter",
-          contactPhone: "",
+          // 2. Map the actual data from the joined profiles table
+          contactName: r.profiles?.full_name || "Anonymous Reporter",
+          contactPhone: r.profiles?.phone || "",
           status: r.status,
           createdAt: r.created_at,
           updatedAt: r.created_at,
@@ -98,19 +106,27 @@ export default function ReportsDashboard() {
 
   const updateReportStatus = async (reportId: string, newStatus: "pending" | "in-progress" | "completed") => {
     try {
-      const { error } = await supabase
+      // 1. Add .select() to verify the row was actually updated in the DB
+      const { data, error } = await supabase
         .from("reports")
         .update({ status: newStatus })
-        .eq("id", reportId);
+        .eq("id", reportId)
+        .select(); // <--- This is the crucial addition
 
       if (error) throw error;
 
+      // 2. Check for the silent failure (RLS block)
+      if (!data || data.length === 0) {
+        throw new Error("Update blocked by database. Please check your admin permissions or Supabase RLS policies.");
+      }
+
+      // 3. Only update local React state if the DB update was confirmed successful
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r))
       );
     } catch (error: any) {
       console.error("Error updating report status:", error);
-      alert(error.message || "Failed to update report status");
+      alert(error.message || "Failed to update report status in database.");
     }
   };
 
@@ -119,17 +135,24 @@ export default function ReportsDashboard() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase
+      // 3. Add .select() to verify the row was actually deleted
+      const { data, error } = await supabase
         .from("reports")
         .delete()
-        .eq("id", reportId);
+        .eq("id", reportId)
+        .select();
 
       if (error) throw error;
+
+      // 4. Catch the silent RLS block
+      if (!data || data.length === 0) {
+        throw new Error("Delete blocked by database. Please check your admin permissions.");
+      }
 
       setReports((prev) => prev.filter((report) => report.id !== reportId));
     } catch (error: any) {
       console.error("Error deleting report:", error);
-      alert(error.message || "Failed to delete report");
+      alert(error.message || "Failed to delete report in database.");
     }
   };
 
@@ -175,7 +198,7 @@ export default function ReportsDashboard() {
               <h1 className="text-xl font-bold text-gray-900 mb-1">Welcome, {displayName}</h1>
               <p className="text-sm text-gray-600">Here is the current status of all resident reports in Barangay Maligaya.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
               <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
                 <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md">
@@ -333,32 +356,38 @@ export default function ReportsDashboard() {
                       {/* Actions Sidebar */}
                       <div className="flex flex-col gap-2 w-full xl:w-48 shrink-0 bg-transparent p-4 rounded-xl border border-[#1350A3] xl:border-none xl:p-0">
                         <p className="text-xs uppercase font-bold tracking-wider text-gray-400 mb-1 xl:block hidden">Update Status</p>
+
+                        {/* Pending Button - Disabled ONLY if currently pending */}
                         <button
                           onClick={() => updateReportStatus(report.id, "pending")}
                           disabled={report.status === "pending"}
                           className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800 border-[#1350A3] cursor-default"
-                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-yellow-50 hover:text-yellow-800"
+                            ? "bg-yellow-100 text-yellow-800 border-[#1350A3] cursor-default"
+                            : "bg-white border-[#1350A3] text-gray-900 hover:bg-yellow-50 hover:text-yellow-800"
                             }`}
                         >
                           <ShieldAlert className="w-4 h-4" /> Pending
                         </button>
+
+                        {/* In Progress Button - Disabled ONLY if currently in-progress */}
                         <button
                           onClick={() => updateReportStatus(report.id, "in-progress")}
                           disabled={report.status === "in-progress"}
                           className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "in-progress"
-                              ? "bg-blue-100 text-blue-800 border-[#1350A3] cursor-default"
-                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-blue-50 hover:text-blue-800"
+                            ? "bg-blue-100 text-blue-800 border-[#1350A3] cursor-default"
+                            : "bg-white border-[#1350A3] text-gray-900 hover:bg-blue-50 hover:text-blue-800"
                             }`}
                         >
                           <Activity className="w-4 h-4" /> In Progress
                         </button>
+
+                        {/* Resolved Button - Disabled ONLY if currently completed */}
                         <button
                           onClick={() => updateReportStatus(report.id, "completed")}
                           disabled={report.status === "completed"}
                           className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "completed"
-                              ? "bg-green-100 text-green-800 border-[#1350A3] cursor-default"
-                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-green-50 hover:text-green-800"
+                            ? "bg-green-100 text-green-800 border-[#1350A3] cursor-default"
+                            : "bg-white border-[#1350A3] text-gray-900 hover:bg-green-50 hover:text-green-800"
                             }`}
                         >
                           <CheckCircle className="w-4 h-4" /> Resolved
