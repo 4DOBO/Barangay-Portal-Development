@@ -375,7 +375,7 @@ export default function Homepage() {
       </section>
 
       {selectedAyuda && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1350A3]/40 px-4">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>

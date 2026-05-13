@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FileText, MapPin, User, Phone, Calendar, Mail, Trash2 } from "lucide-react";
+import { FileText, MapPin, User, Phone, Calendar, Mail, Trash2, Activity, CheckCircle, Hash, ShieldAlert } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 
 interface Report {
@@ -158,43 +158,6 @@ export default function ReportsDashboard() {
     }
   };
 
-  const getFilterButtonClass = (filter: FilterStatus) => {
-    const isActive = activeFilter === filter;
-
-    if (!isActive) {
-      return "border-b-2 border-transparent text-gray-600 hover:text-gray-900";
-    }
-
-    switch (filter) {
-      case "pending":
-        return "border-b-2 border-yellow-600 text-yellow-600";
-      case "in_progress":
-        return "border-b-2 border-blue-600 text-blue-600";
-      case "done":
-        return "border-b-2 border-green-600 text-green-600";
-      default:
-        return "border-b-2 border-[#1350A3] text-[#1350A3]";
-    }
-  };
-
-  const getFilterIndicatorClass = (filter: FilterStatus) => {
-    const isActive = activeFilter === filter;
-
-    if (!isActive) {
-      return "border-gray-400 bg-transparent text-gray-400";
-    }
-
-    switch (filter) {
-      case "pending":
-        return "border-yellow-600 bg-yellow-600 text-yellow-600";
-      case "in_progress":
-        return "border-blue-600 bg-blue-600 text-blue-600";
-      case "done":
-        return "border-green-600 bg-green-600 text-green-600";
-      default:
-        return "border-[#1350A3] bg-transparent text-[#1350A3]";
-    }
-  };
 
   const getCategoryIcon = (category: string) => {
     return <FileText className="w-4 h-4" />;
@@ -203,141 +166,215 @@ export default function ReportsDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-black bg-transparent p-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome, {displayName}</h1>
-            <p className="text-gray-600">Have a great day.</p>
-          </div>
-          <div className="text-left md:text-right">
-            <p className="text-sm font-medium text-gray-500">
-              Total Reports as of {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-            </p>
-            <p className="text-4xl font-bold text-[#1350A3]">{reports.length}</p>
+
+        {/* Header & Stats */}
+        <div className="mb-8">
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#1350A3] bg-transparent p-5 md:p-6">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Welcome, {displayName}</h1>
+              <p className="text-sm text-gray-600">Here is the current status of all resident reports in Barangay Maligaya.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Reports</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 text-yellow-600 rounded-md">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pending</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "pending").length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-md">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">In Progress</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "in_progress").length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-green-100 text-green-600 rounded-md">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Resolved</p>
+                  <p className="text-xl font-bold text-gray-900">{reports.filter((r) => r.status === "done").length}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="flex flex-wrap gap-2 p-4 border-b">
+        {/* Reports Container */}
+        <div className="bg-white rounded-2xl border border-[#1350A3] mb-6 overflow-hidden">
+          {/* Tabs */}
+          <div className="flex flex-col sm:flex-row overflow-x-auto border-b border-[#1350A3]">
             <button
               onClick={() => setActiveFilter("primary")}
-              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("primary")}`}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "primary" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+                }`}
             >
-              <Mail className={`h-5 w-5 ${getFilterIndicatorClass("primary")}`} />
-              Primary ({reports.length})
+              All Reports
             </button>
             <button
               onClick={() => setActiveFilter("pending")}
-              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("pending")}`}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "pending" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+                }`}
             >
-              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("pending")}`} />
-              Pending ({reports.filter((r) => r.status === "pending").length})
+              Pending
             </button>
             <button
               onClick={() => setActiveFilter("in_progress")}
-              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("in_progress")}`}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "in_progress" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+                }`}
             >
-              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("in_progress")}`} />
-              In Progress ({reports.filter((r) => r.status === "in_progress").length})
+              In Progress
             </button>
             <button
               onClick={() => setActiveFilter("done")}
-              className={`flex items-center gap-3 px-2 py-3 text-lg font-semibold transition ${getFilterButtonClass("done")}`}
+              className={`flex-1 flex justify-center items-center gap-2 py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors sm:border-b-4 border-b-0 border-l-4 sm:border-l-0 ${activeFilter === "done" ? "border-[#1350A3] text-[#1350A3] bg-gray-100" : "border-transparent text-gray-500 hover:text-[#1350A3] hover:bg-gray-50"
+                }`}
             >
-              <span className={`h-4 w-4 rounded-xs border ${getFilterIndicatorClass("done")}`} />
-              Done ({reports.filter((r) => r.status === "done").length})
+              Resolved
             </button>
           </div>
 
-          <div className="p-6">
+          {/* List */}
+          <div className="p-6 bg-transparent">
             {loading ? (
               <div className="text-center py-12 text-gray-500">Loading reports...</div>
             ) : filteredReports.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">
-                  No reports found for the {activeFilter === "primary" ? "all categories" : getStatusLabel(activeFilter)}.
+              <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-300">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">
+                  No reports found for {activeFilter === "primary" ? "all categories" : getStatusLabel(activeFilter).toLowerCase()}.
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {filteredReports.map((report) => (
-                  <div key={report.id} className="relative border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
-                    {activeFilter === "done" && report.status === "done" && (
-                      <button
-                        onClick={() => deleteReport(report.id)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-red-600 transition hover:text-red-700"
-                        style={{ background: "none", border: "none" }}
-                        aria-label="Delete report"
-                      >
-                        <Trash2 className="h-6 w-6" />
-                      </button>
-                    )}
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-gray-900">{report.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeColor(report.status)}`}>
+                  <div key={report.id} className="relative bg-white border border-[#1350A3] rounded-2xl p-6 transition hover:shadow-[4px_4px_0px_0px_#1350A3]">
+                    <div className="flex flex-col xl:flex-row justify-between items-start gap-6">
+                      <div className="flex-1 w-full">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          <span className="flex items-center gap-1 text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            <Hash className="w-3 h-3" />
+                            RPT-{report.id.substring(0, 6).toUpperCase()}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusBadgeColor(report.status)}`}>
                             {getStatusLabel(report.status)}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                          <div className="flex items-center gap-1">
-                            {getCategoryIcon(report.category)}
-                            <span className="capitalize">{report.category.replace("_", " ")}</span>
-                          </div>
-                          {report.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{report.location}</span>
+
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{report.title}</h3>
+                        <p className="text-gray-700 mb-6">{report.description}</p>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm bg-transparent border border-[#1350A3] p-4 rounded-xl">
+                          <div>
+                            <p className="text-gray-400 mb-2 text-xs uppercase font-bold tracking-wider">Report Details</p>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-gray-700">
+                                {getCategoryIcon(report.category)}
+                                <span className="capitalize font-medium">{report.category.replace("_", " ")}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-700">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span>{new Date(report.createdAt).toLocaleString()}</span>
+                              </div>
+                              {report.location && (
+                                <div className="flex items-start gap-2 text-gray-700">
+                                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                                  <span>{report.location}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(report.createdAt).toLocaleString()}</span>
+                          </div>
+
+                          <div>
+                            <p className="text-gray-400 mb-2 text-xs uppercase font-bold tracking-wider">Reporter Info</p>
+                            <div className="space-y-2">
+                              {report.contactName ? (
+                                <div className="flex items-center gap-2 text-gray-700">
+                                  <User className="w-4 h-4 text-gray-400" />
+                                  <span className="font-medium">{report.contactName}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-gray-400 italic">
+                                  <User className="w-4 h-4" />
+                                  <span>Anonymous Reporter</span>
+                                </div>
+                              )}
+                              {report.contactPhone && (
+                                <div className="flex items-center gap-2 text-gray-700">
+                                  <Phone className="w-4 h-4 text-gray-400" />
+                                  <span>{report.contactPhone}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <p className="text-gray-700 mb-3">{report.description}</p>
-                        {(report.contactName || report.contactPhone) && (
-                          <div className="flex gap-4 text-sm text-gray-600">
-                            {report.contactName && (
-                              <div className="flex items-center gap-1">
-                                <User className="w-4 h-4" />
-                                <span>{report.contactName}</span>
-                              </div>
-                            )}
-                            {report.contactPhone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="w-4 h-4" />
-                                <span>{report.contactPhone}</span>
-                              </div>
-                            )}
-                          </div>
+                      </div>
+
+                      {/* Actions Sidebar */}
+                      <div className="flex flex-col gap-2 w-full xl:w-48 shrink-0 bg-transparent p-4 rounded-xl border border-[#1350A3] xl:border-none xl:p-0">
+                        <p className="text-xs uppercase font-bold tracking-wider text-gray-400 mb-1 xl:block hidden">Update Status</p>
+                        <button
+                          onClick={() => updateReportStatus(report.id, "pending")}
+                          disabled={report.status === "pending"}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800 border-[#1350A3] cursor-default"
+                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-yellow-50 hover:text-yellow-800"
+                            }`}
+                        >
+                          <ShieldAlert className="w-4 h-4" /> Pending
+                        </button>
+                        <button
+                          onClick={() => updateReportStatus(report.id, "in_progress")}
+                          disabled={report.status === "in_progress"}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "in_progress"
+                              ? "bg-blue-100 text-blue-800 border-[#1350A3] cursor-default"
+                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-blue-50 hover:text-blue-800"
+                            }`}
+                        >
+                          <Activity className="w-4 h-4" /> In Progress
+                        </button>
+                        <button
+                          onClick={() => updateReportStatus(report.id, "done")}
+                          disabled={report.status === "done"}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border ${report.status === "done"
+                              ? "bg-green-100 text-green-800 border-[#1350A3] cursor-default"
+                              : "bg-white border-[#1350A3] text-gray-900 hover:bg-green-50 hover:text-green-800"
+                            }`}
+                        >
+                          <CheckCircle className="w-4 h-4" /> Resolved
+                        </button>
+
+                        {activeFilter === "done" && report.status === "done" && (
+                          <>
+                            <div className="h-px bg-[#1350A3] my-2 hidden xl:block"></div>
+                            <button
+                              onClick={() => deleteReport(report.id)}
+                              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#1350A3] text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" /> Delete Record
+                            </button>
+                          </>
                         )}
                       </div>
-                    </div>
-
-                    <div className="flex gap-2 pt-4 border-t">
-                      <button
-                        onClick={() => updateReportStatus(report.id, "pending")}
-                        disabled={report.status === "pending"}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                      >
-                        Mark Pending
-                      </button>
-                      <button
-                        onClick={() => updateReportStatus(report.id, "in_progress")}
-                        disabled={report.status === "in_progress"}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                      >
-                        Mark In Progress
-                      </button>
-                      <button
-                        onClick={() => updateReportStatus(report.id, "done")}
-                        disabled={report.status === "done"}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                      >
-                        Mark Done
-                      </button>
                     </div>
                   </div>
                 ))}

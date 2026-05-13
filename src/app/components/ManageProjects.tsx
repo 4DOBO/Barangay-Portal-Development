@@ -142,32 +142,67 @@ export default function ManageProjects() {
   return (
     <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex-1">
-            {showForm && (
-              <h1
-                className="text-center text-gray-900"
-                style={{ fontFamily: "'Mate SC', serif", fontSize: "40px", fontWeight: 400 }}
+        {/* Header & Stats */}
+        <div className="mb-8">
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#1350A3] bg-transparent p-5 md:p-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 mb-1">Projects</h1>
+                <p className="text-sm text-gray-600">Manage and showcase ongoing and completed barangay projects.</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (showForm) {
+                    setShowForm(false);
+                    setEditingProjectId(null);
+                    setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
+                  } else {
+                    setShowForm(true);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
-                Projects
-              </h1>
-            )}
+                <Plus className="w-5 h-5" />
+                {showForm ? "Cancel" : "New Project"}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
+                  <FolderKanban className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Projects</p>
+                  <p className="text-xl font-bold text-gray-900">{projects.length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-md border border-[#1350A3]">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ongoing</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {projects.filter(p => p.status === "ongoing").length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-green-100 text-green-600 rounded-md border border-[#1350A3]">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Completed</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {projects.filter(p => p.status === "completed").length}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              if (showForm) {
-                setShowForm(false);
-                setEditingProjectId(null);
-                setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
-              } else {
-                setShowForm(true);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            {showForm ? "Cancel" : "New Project"}
-          </button>
         </div>
 
         {error && (
@@ -183,9 +218,9 @@ export default function ManageProjects() {
         )}
 
         {showForm && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <FolderKanban className="w-6 h-6" />
+          <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <FolderKanban className="w-5 h-5" />
               {editingProjectId ? "Edit Project" : "Create New Project"}
             </h2>
 
@@ -252,7 +287,7 @@ export default function ManageProjects() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
                 {submitting ? (editingProjectId ? "Saving..." : "Creating...") : (editingProjectId ? "Save Changes" : "Create Project")}
               </button>
@@ -260,8 +295,8 @@ export default function ManageProjects() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">All Projects</h2>
+        <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">All Projects</h2>
 
           {projects.length === 0 ? (
             <div className="text-center py-12">
@@ -271,7 +306,7 @@ export default function ManageProjects() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.map((project) => (
-                <div key={project.id} className="relative border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
+                <div key={project.id} className="relative border border-[#1350A3] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_#1350A3] transition">
                   {project.imageUrl && (
                     <img
                       src={project.imageUrl}
@@ -296,7 +331,7 @@ export default function ManageProjects() {
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h3>
-                    <p className="text-gray-600">{project.description}</p>
+                    <p className="text-sm text-gray-600">{project.description}</p>
                     <div className="absolute right-4 bottom-4 flex items-center gap-3">
                       <button
                         type="button"

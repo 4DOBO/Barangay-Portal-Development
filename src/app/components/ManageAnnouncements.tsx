@@ -139,32 +139,55 @@ export default function ManageAnnouncements() {
   return (
     <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex-1">
-            {showForm && (
-              <h1
-                className="text-center text-gray-900"
-                style={{ fontFamily: "'Mate SC', serif", fontSize: "40px", fontWeight: 400 }}
+        {/* Header & Stats */}
+        <div className="mb-8">
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#1350A3] bg-transparent p-5 md:p-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 mb-1">Announcements</h1>
+                <p className="text-sm text-gray-600">Manage public announcements for Barangay Maligaya.</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (showForm) {
+                    setShowForm(false);
+                    setEditingAnnouncementId(null);
+                    setFormData({ title: "", content: "", imageUrl: "" });
+                  } else {
+                    setShowForm(true);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
-                {editingAnnouncementId ? "Edit Announcement" : "Create Announcement"}
-              </h1>
-            )}
+                <Plus className="w-5 h-5" />
+                {showForm ? "Cancel" : "New Announcement"}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Published</p>
+                  <p className="text-xl font-bold text-gray-900">{announcements.length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
+                <div className="p-2 bg-green-100 text-green-600 rounded-md border border-[#1350A3]">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Latest Update</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {announcements.length > 0 ? new Date(Math.max(...announcements.map(a => new Date(a.createdAt).getTime()))).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              if (showForm) {
-                setShowForm(false);
-                setEditingAnnouncementId(null);
-                setFormData({ title: "", content: "", imageUrl: "" });
-              } else {
-                setShowForm(true);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            {showForm ? "Cancel" : "New Announcement"}
-          </button>
         </div>
 
         {error && (
@@ -180,9 +203,9 @@ export default function ManageAnnouncements() {
         )}
 
         {showForm && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Megaphone className="w-6 h-6" />
+          <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Megaphone className="w-5 h-5" />
               {editingAnnouncementId ? "Edit Announcement" : "Create New Announcement"}
             </h2>
 
@@ -234,7 +257,7 @@ export default function ManageAnnouncements() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border border-[#1350A3] shadow-[2px_2px_0px_0px_#1350A3] transition-transform active:translate-y-1 active:shadow-none"
               >
                 {submitting ? (editingAnnouncementId ? "Saving..." : "Creating...") : (editingAnnouncementId ? "Save Changes" : "Create Announcement")}
               </button>
@@ -242,8 +265,8 @@ export default function ManageAnnouncements() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">All Announcements</h2>
+        <div className="bg-white rounded-2xl border border-[#1350A3] p-8 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">All Announcements</h2>
 
           {announcements.length === 0 ? (
             <div className="text-center py-12">
@@ -253,7 +276,7 @@ export default function ManageAnnouncements() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {announcements.map((announcement) => (
-                <div key={announcement.id} className="relative border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition">
+                <div key={announcement.id} className="relative border border-[#1350A3] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_#1350A3] transition">
                   {announcement.imageUrl && (
                     <img
                       src={announcement.imageUrl}
@@ -267,7 +290,7 @@ export default function ManageAnnouncements() {
                       {new Date(announcement.createdAt).toLocaleDateString()}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{announcement.title}</h3>
-                    <p className="text-gray-600">{announcement.content}</p>
+                    <p className="text-sm text-gray-600">{announcement.content}</p>
                     <div className="absolute right-4 bottom-4 flex items-center gap-3">
                       <button
                         type="button"
