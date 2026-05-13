@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink, useLocation, useNavigate } from "react-router";
-import { Menu, X, LogOut, FileText, Megaphone, FolderKanban, HandHelping, ClipboardList } from "lucide-react";
+import { Menu, X, LogOut, FileText, Megaphone, FolderKanban, HandHelping, ClipboardList, HandHeart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import sampleLogo from "../../assets/Sample Barangay Logo.png";
@@ -8,6 +8,7 @@ import manilaLogo from "../../assets/Manila.png"
 
 export default function Root() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,108 +34,148 @@ export default function Root() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
       {isAdminRoute ? (
         <div className="flex h-screen overflow-hidden">
+          {/* Admin Sidebar — desktop only */}
           <aside
-            className="flex h-screen shrink-0 flex-col justify-between overflow-hidden bg-white px-8 py-10"
-            style={{ width: "412px", borderRight: "10px solid #1350A3", fontFamily: "'Poppins', sans-serif" }}
+            className="hidden md:flex h-screen shrink-0 flex-col justify-between bg-white px-2 lg:px-4 py-6 lg:py-8 transition-all duration-300 relative"
+            style={{ width: isSidebarCollapsed ? "80px" : "clamp(220px, 20vw, 320px)", borderRight: "6px solid #1350A3", fontFamily: "'Poppins', sans-serif" }}
           >
+            {/* Collapse Toggle Button */}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="absolute top-4 -right-4 bg-white border-2 border-[#1350A3] rounded-full p-1 text-[#1350A3] hover:bg-gray-100 z-50 transition"
+              style={{ cursor: "pointer", zIndex: 100 }}
+            >
+              {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+
             <div className="flex flex-1 flex-col">
-              <div className="flex flex-col items-center pt-4 text-center">
+              <div className="flex flex-col items-center pt-2 text-center">
                 <img
                   src={sampleLogo}
                   alt="Sample Barangay Logo"
-                  style={{ width: "220px", height: "220px", marginTop: "-40px", marginBottom: "-10px" }}
-                  className="object-contain"
+                  className={`${isSidebarCollapsed ? 'w-10 h-10' : 'w-20 lg:w-28 h-20 lg:h-28'} object-contain transition-all duration-300`}
                 />
-                <h2
-                  style={{
-                    fontFamily: "'Mate SC', serif",
-                    fontSize: "32px",
-                    fontWeight: "400",
-                    color: "#000000",
-                    WebkitTextStroke: "1px #000000",
-                    lineHeight: 1.1,
-                    marginBottom: "-10px",
-                  }}
-                >
-                  BARANGAY MALIGAYA
-                </h2>
-                <div className="mt-4 w-full max-w-[320px]" style={{ borderTop: "3px solid #000000" }} />
-                <p
-                  style={{
-                    fontFamily: "'Mate SC', serif",
-                    fontSize: "32px",
-                    fontWeight: "400",
-                    color: "#000000",
-                    lineHeight: 1.1,
-                    marginTop: "5px",
-                  }}
-                >
-                  lungsod ng maynila
-                </p>
+                {!isSidebarCollapsed && (
+                  <>
+                    <h2
+                      style={{
+                        fontFamily: "'Mate SC', serif",
+                        fontWeight: 700,
+                        color: "#1a1a1a",
+                        lineHeight: 1.1,
+                      }}
+                      className="text-lg lg:text-xl mt-2 whitespace-nowrap"
+                    >
+                      BARANGAY MALIGAYA
+                    </h2>
+                    <div className="mt-2 w-full max-w-[240px]" style={{ borderTop: "2px solid #000000" }} />
+                    <p
+                      style={{
+                        fontFamily: "'Mate SC', serif",
+                        fontWeight: "400",
+                        color: "#000000",
+                        lineHeight: 1.1,
+                      }}
+                      className="text-base lg:text-lg mt-1 whitespace-nowrap"
+                    >
+                      lungsod ng maynila
+                    </p>
+                  </>
+                )}
               </div>
 
-              <div className="flex flex-1 items-center justify-center">
-                <nav className="flex w-full flex-col items-center gap-6">
-                  <div className="flex w-full max-w-[320px] items-center gap-0">
+              <div className="flex flex-1 items-center justify-center mt-6">
+                <nav className="flex w-full flex-col items-center gap-3 lg:gap-4">
+                  <div className="flex w-full max-w-[260px] items-center gap-0">
                     <NavLink
                       to="/admin/reports"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                      className={({ isActive }) => `flex h-10 w-10 shrink-0 items-center justify-center transition hover:opacity-70 ${isActive ? "text-[#1350A3]" : "text-black"}`}
+                      title="Reports"
                     >
-                      <FileText className="h-10 w-10" />
+                      <FileText className="h-6 w-6" />
                     </NavLink>
-                    <NavLink
-                      to="/admin/reports"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Reports
-                    </NavLink>
+                    {!isSidebarCollapsed && (
+                      <NavLink
+                        to="/admin/reports"
+                        className={({ isActive }) =>
+                          `flex h-10 lg:h-12 flex-1 items-center justify-start rounded-[12px] px-3 lg:px-4 transition text-base lg:text-lg ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                          }`
+                        }
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        Reports
+                      </NavLink>
+                    )}
                   </div>
-                  <div className="flex w-full max-w-[320px] items-center gap-0">
+                  <div className="flex w-full max-w-[260px] items-center gap-0">
                     <NavLink
                       to="/admin/announcements"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                      className={({ isActive }) => `flex h-10 w-10 shrink-0 items-center justify-center transition hover:opacity-70 ${isActive ? "text-[#1350A3]" : "text-black"}`}
+                      title="Announcements"
                     >
-                      <Megaphone className="h-10 w-10" />
+                      <Megaphone className="h-6 w-6" />
                     </NavLink>
-                    <NavLink
-                      to="/admin/announcements"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[286px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "30px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Announcements
-                    </NavLink>
+                    {!isSidebarCollapsed && (
+                      <NavLink
+                        to="/admin/announcements"
+                        className={({ isActive }) =>
+                          `flex h-10 lg:h-12 flex-1 items-center justify-start rounded-[12px] px-3 lg:px-4 transition text-sm lg:text-base ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                          }`
+                        }
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        Announcements
+                      </NavLink>
+                    )}
                   </div>
-                  <div className="flex w-full max-w-[320px] items-center gap-2">
+                  <div className="flex w-full max-w-[260px] items-center gap-0">
                     <NavLink
                       to="/admin/projects"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                      className={({ isActive }) => `flex h-10 w-10 shrink-0 items-center justify-center transition hover:opacity-70 ${isActive ? "text-[#1350A3]" : "text-black"}`}
+                      title="Projects"
                     >
-                      <FolderKanban className="h-10 w-10" />
+                      <FolderKanban className="h-6 w-6" />
                     </NavLink>
-                    <NavLink
-                      to="/admin/projects"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Projects
-                    </NavLink>
+                    {!isSidebarCollapsed && (
+                      <NavLink
+                        to="/admin/projects"
+                        className={({ isActive }) =>
+                          `flex h-10 lg:h-12 flex-1 items-center justify-start rounded-[12px] px-3 lg:px-4 transition text-base lg:text-lg ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                          }`
+                        }
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        Projects
+                      </NavLink>
+                    )}
                   </div>
-                  <div className="flex w-full max-w-[320px] items-center gap-2">
+                  <div className="flex w-full max-w-[260px] items-center gap-0">
+                    <NavLink
+                      to="/admin/ayuda"
+                      className={({ isActive }) => `flex h-10 w-10 shrink-0 items-center justify-center transition hover:opacity-70 ${isActive ? "text-[#1350A3]" : "text-black"}`}
+                      title="Ayuda"
+                    >
+                      <HandHeart className="h-6 w-6" />
+                    </NavLink>
+                    {!isSidebarCollapsed && (
+                      <NavLink
+                        to="/admin/ayuda"
+                        className={({ isActive }) =>
+                          `flex h-10 lg:h-12 flex-1 items-center justify-start rounded-[12px] px-3 lg:px-4 transition text-base lg:text-lg ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                          }`
+                        }
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        Ayuda
+                      </NavLink>
+                    )}
+                  </div>
+                  <div className="flex w-full max-w-[260px] items-center gap-0">
                     <NavLink
                       to="/admin/ayuda"
                       className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
                     >
-                      <HandHelping className="h-10 w-10" />
+                      <HandHelping className="h-6 w-6" />
                     </NavLink>
                     <NavLink
                       to="/admin/ayuda"
@@ -155,15 +196,32 @@ export default function Root() {
                       <ClipboardList className="h-10 w-10" />
                     </NavLink>
                     <NavLink
-                      to="/admin/ayuda-applications"
+                      to="/admin/announcements"
                       className={({ isActive }) =>
-                        `flex h-16 w-[286px] items-center justify-start rounded-[15px] px-6 transition ${
-                          isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                        `flex h-16 w-[286px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
                         }`
                       }
-                      style={{ fontSize: "27px", fontFamily: "'Poppins', sans-serif" }}
+                      style={{ fontSize: "30px", fontFamily: "'Poppins', sans-serif" }}
                     >
-                      Applications
+                      Announcements
+                    </NavLink>
+                  </div>
+                  <div className="flex w-full max-w-[320px] items-center gap-2">
+                    <NavLink
+                      to="/admin/projects"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                    >
+                      <HandHelping className="h-10 w-10" />
+                    </NavLink>
+                    <NavLink
+                      to="/admin/projects"
+                      className={({ isActive }) =>
+                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                        }`
+                      }
+                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
+                    >
+                      Projects
                     </NavLink>
                   </div>
                 </nav>
@@ -172,59 +230,132 @@ export default function Root() {
 
             <button
               onClick={handleLogout}
-              className="flex h-14 w-14 items-center justify-center text-black transition hover:opacity-70"
+              className="flex h-10 w-10 items-center justify-center text-black transition hover:opacity-70 mx-auto"
               style={{ border: "none", fontFamily: "'Poppins', sans-serif" }}
+              title="Logout"
             >
-              <LogOut className="h-10 w-10" />
+              <LogOut className="h-6 w-6" />
             </button>
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-y-auto">
+          {/* Mobile admin header */}
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b-4 border-[#1350A3] px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src={sampleLogo} alt="Logo" className="w-10 h-10 object-contain" />
+              <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 400, fontSize: '14px' }}>BARANGAY MALIGAYA</span>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-black"
+              style={{ background: 'none', border: 'none' }}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* Mobile admin nav dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden fixed top-[60px] left-0 right-0 z-40 bg-white border-b-4 border-[#1350A3] shadow-lg">
+              <nav className="flex flex-col p-4 gap-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                <NavLink
+                  to="/admin/reports"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-100"}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <FileText className="h-5 w-5" />
+                  Reports
+                </NavLink>
+                <NavLink
+                  to="/admin/announcements"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-100"}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Megaphone className="h-5 w-5" />
+                  Announcements
+                </NavLink>
+                <NavLink
+                  to="/admin/projects"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-100"}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <FolderKanban className="h-5 w-5" />
+                  Projects
+                </NavLink>
+                <NavLink
+                  to="/admin/ayuda"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-100"}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <HandHeart className="h-5 w-5" />
+                  Ayuda
+                </NavLink>
+                <button
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
+                  style={{ background: 'none', border: 'none' }}
+                >
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </button>
+              </nav>
+            </div>
+          )}
+
+          <main className="min-w-0 flex-1 overflow-y-auto md:pt-0 pt-[60px]">
             <Outlet />
           </main>
         </div>
       ) : (
         <>
-          <header style={{ backgroundColor: '#ffffff', borderBottom: '5px solid #1350A3', boxShadow: '0 4px 16px rgba(19,80,163,0.18)' }} className="sticky top-0 z-50">
-            <nav className="w-full px-6 lg:px-10">
-              <div style={{ height: '131px' }} className="flex justify-between items-center">
-                <Link to="/" className="flex items-center gap-3">
+          {/* Public Header */}
+          <header style={{ backgroundColor: '#ffffff', borderBottom: '4px solid #1350A3', boxShadow: '0 4px 16px rgba(19,80,163,0.12)' }} className="sticky top-0 z-50">
+            <nav className="w-full px-4 sm:px-6 lg:px-10">
+              <div className="h-16 sm:h-20 flex justify-between items-center">
+                <Link to="/" className="flex items-center gap-0 sm:gap-2" style={{ textDecoration: 'none' }}>
                   <img
                     src={sampleLogo}
                     alt="Sample Barangay Logo"
-                    className="w-35 h-35 object-contain"
+                    className="w-10 h-10 sm:w-14 sm:h-14 object-contain"
                   />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontFamily: "'Mate SC', serif", fontSize: '24px', fontWeight: '400', color: '#13503', lineHeight: 1.15 }}>Barangay Portal</span>
-                    <hr style={{ border: 'none', borderTop: '1px solid #000000', margin: '3px 0' }} />
-                    <span style={{ fontFamily: "'Mate SC', serif", fontSize: '20px', fontWeight: '400', color: '#000000' }}>Lungsod ng Maynila</span>
+                  <div className="flex flex-col">
+                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 700, color: '#1350A3', lineHeight: 1.15 }} className="text-md sm:text-xl">Barangay Portal</span>
+                    <hr style={{ border: 'none', borderTop: '1px solid #ccc', margin: '2px 0' }} />
+                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 400, color: '#555' }} className="text-sm sm:text-lg">Lungsod ng Maynila</span>
                   </div>
                 </Link>
 
-                <div className="hidden md:flex items-center gap-8">
-                  <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Home</Link>
-                  <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">
+                <div className="hidden md:flex items-center gap-4 lg:gap-8">
+                  <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Home</Link>
+                  <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">
                     About Us
                   </a>
-                  <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">
+                  <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">
                     Hotlines
                   </a>
                   {isAdmin ? (
                     <>
-                      <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Reports</Link>
-                      <Link to="/admin/announcements" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Announcements</Link>
-                      <Link to="/admin/projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition">Projects</Link>
+                      <Link to="/admin/reports" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Reports</Link>
+                      <Link to="/admin/announcements" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Announcements</Link>
+                      <Link to="/admin/projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Projects</Link>
                       <button
                         onClick={handleLogout}
                         style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
-                        className="flex items-center gap-2 px-2 py-1 hover:opacity-60 transition"
+                        className="flex items-center gap-2 px-2 py-1 hover:opacity-60 transition text-sm lg:text-base"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
                       </button>
                     </>
                   ) : (
-                    <Link to="/login" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none' }} className="px-2 py-1 hover:opacity-60 transition">
+                    <Link to="/login" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none' }} className="px-2 py-1 hover:opacity-60 transition text-sm lg:text-base">
                       Admin Login
                     </Link>
                   )}
@@ -232,8 +363,8 @@ export default function Root() {
 
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  style={{ color: '#13503' }}
-                  className="md:hidden p-2"
+                  className="md:hidden p-2 text-[#1350A3]"
+                  style={{ background: 'none', border: 'none' }}
                 >
                   {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
@@ -262,6 +393,9 @@ export default function Root() {
                         <Link to="/admin/projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
                           Projects
                         </Link>
+                        <Link to="/admin/ayuda" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
+                          Ayuda
+                        </Link>
                         <button
                           onClick={() => {
                             handleLogout();
@@ -289,93 +423,113 @@ export default function Root() {
             <Outlet />
           </main>
 
+          {/* Footer */}
           <footer
             style={{
               backgroundColor: "rgba(19, 80, 163, 1)",
-              boxShadow: "0 16px 24px rgba(13, 13, 14, 0.18)",
               fontFamily: "'Poppins', sans-serif",
               fontSize: "15px",
               fontWeight: 400,
             }}
             className="relative z-10 text-white"
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-              <div className="mb-10 flex justify-start" style={{ marginLeft: -250 }}>
-                <div className="flex items-center gap-4">
-                  <img
-                    src={sampleLogo}
-                    alt="Sample Barangay Logo"
-                    style={{ width: "140px", height: "140px" }}
-                    className="object-contain"
-                  />
-                  <img
-                    src={manilaLogo}
-                    alt="Manila Logo"
-                    style={{ width: "90px", height: "90px" }}
-                    className="object-contain"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <div id="about-us">
-                  <div className="flex items-center gap-3 mb-4">
-                    <h3 className="text-2xl font-regular" style={{ marginLeft: -220, marginTop: -50, letterSpacing: 15, lineHeight: 2 }}>OFFICIAL WEBSITE OF BARANGAY MALIGAYA</h3>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+                {/* About & Logos */}
+                <div id="about-us" className="sm:col-span-2 lg:col-span-1 flex flex-col">
+                  {/* Logo row */}
+                  <div className="mb-6 flex items-center gap-4">
+                    <img
+                      src={sampleLogo}
+                      alt="Sample Barangay Logo"
+                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-contain"
+                    />
+                    <img
+                      src={manilaLogo}
+                      alt="Manila Logo"
+                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-contain"
+                    />
                   </div>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -220, fontSize: '16px' }}>About this website</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>Contact us</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>info.brgymaligaya@gmail.com</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -220, marginTop: 15, fontSize: '16px' }}>(049) 567-341</p>
+                  <h3 className="text-base sm:text-lg font-medium mb-3" style={{ letterSpacing: '1px', lineHeight: 1.4 }}>
+                    OFFICIAL WEBSITE OF BARANGAY MALIGAYA
+                  </h3>
+                  <div className="space-y-1 text-sm text-white/90">
+                    <p>About this website</p>
+                    <p>Contact us</p>
+                    <p>info.brgymaligaya@gmail.com</p>
+                    <p>(049) 567-341</p>
+                  </div>
                 </div>
 
+                {/* Emergency Hotlines Column 1 */}
                 <div id="hotlines">
-                  <div className="mb-5">
-                    <h3 className="text-2xl font-bold" style={{ marginLeft: 0, marginTop: -50, lineHeight: 2 }}>Emergency Hotline</h3>
+                  <h3 className="text-base sm:text-lg font-bold mb-4">Emergency Hotline</h3>
+                  <div className="space-y-4 text-sm text-white/90">
+                    <div>
+                      <p className="font-semibold text-white">BFP</p>
+                      <p>(02) 8426-0219</p>
+                      <p>(02) 8426-0246</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">NDRRMC</p>
+                      <p>(02) 8911-5061 TO 65, loc 100</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">DSWD</p>
+                      <p>(02) 8931-8101 to 07</p>
+                    </div>
                   </div>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>BFP</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>(02) 8426-0219</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, fontSize: '16px', lineHeight: 2 }}>(02) 8426-0246 </p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>NDRRMC</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>(02) 8911-5061 TO 65, loc 100</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>DSWD</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: 0, marginTop: 15, fontSize: '16px' }}>(02) 8931-8101 to 07</p>
                 </div>
 
+                {/* Emergency Hotlines Column 2 */}
                 <div>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px', lineHeight: 2 }}>MMDA</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, fontSize: '16px', lineHeight: 2 }}>(02) 882 4151 to 77</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, fontSize: '16px', lineHeight: 2 }}>(02) DPWH </p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>165-02</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>PAG-ASA</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>(02) 8284-0800</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>PNP</p>
-                  <p className="text-white leading-relaxed" style={{ marginLeft: -100, marginTop: 15, fontSize: '16px' }}>(02) 8722-0650 or 117</p>
+                  <h3 className="text-base sm:text-lg font-bold mb-4 invisible hidden sm:block">&nbsp;</h3>
+                  <div className="space-y-4 text-sm text-white/90 sm:mt-0 mt-2">
+                    <div>
+                      <p className="font-semibold text-white">MMDA</p>
+                      <p>(02) 882 4151 to 77</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">DPWH</p>
+                      <p>165-02</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">PAG-ASA</p>
+                      <p>(02) 8284-0800</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">PNP</p>
+                      <p>(02) 8722-0650 or 117</p>
+                    </div>
+                  </div>
+                </div>
 
-                  <h3 className="text-xl font-bold mb-1" style={{ marginLeft: 250, marginTop: -360, lineHeight: 2 }}>Quick Links</h3>
-                  <div className="flex flex-col gap-3">
-                    <a href="/#announcements" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>
+                {/* Quick Links */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold mb-4">Quick Links</h3>
+                  <div className="flex flex-col gap-3 text-sm">
+                    <a href="/#announcements" className="text-gray-200 hover:text-white transition">
                       Announcements
                     </a>
-                    <a href="/#projects" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>
+                    <a href="/#projects" className="text-gray-200 hover:text-white transition">
                       Projects
                     </a>
-                    <a
-                      href="/#ayuda"
-                      className="text-left text-gray-300 hover:text-white transition"
-                      style={{ marginLeft: 250 }}
+                    <button
+                      type="button"
+                      className="text-left text-gray-200 hover:text-white transition"
+                      style={{ background: "none", border: "none", padding: 0 }}
                     >
                       Ayuda
                     </a>
                     {isAdmin && (
                       <>
-                        <Link to="/admin/reports" className="text-gray-300 hover:text-white transition">Reports Dashboard</Link>
-                        <Link to="/admin/announcements" className="text-gray-300 hover:text-white transition">Announcements</Link>
-                        <Link to="/admin/projects" className="text-gray-300 hover:text-white transition">Projects</Link>
+                        <Link to="/admin/reports" className="text-gray-200 hover:text-white transition">Reports Dashboard</Link>
+                        <Link to="/admin/announcements" className="text-gray-200 hover:text-white transition">Announcements</Link>
+                        <Link to="/admin/projects" className="text-gray-200 hover:text-white transition">Projects</Link>
                       </>
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="space-10">
               </div>
             </div>
           </footer>
