@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
