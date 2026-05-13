@@ -170,17 +170,32 @@ app.post("/make-server-97d3df46/announcements", async (c) => {
     }
 
     const body = await c.req.json();
-    const { title, content, imageUrl } = body;
+    const {
+      title,
+      content,
+      description,
+      category,
+      eventDate,
+      eventTime,
+      author,
+      priority,
+      imageUrl,
+    } = body;
 
-    if (!title || !content) {
-      return c.json({ error: "Missing required fields: title, content" }, 400);
+    if (!title || !(description || content)) {
+      return c.json({ error: "Missing required fields: title, description" }, 400);
     }
 
     const announcementId = `announcement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const announcement = {
       id: announcementId,
       title,
-      content,
+      category: category || "Announcement",
+      description: description || content || "",
+      eventDate: eventDate || "",
+      eventTime: eventTime || "",
+      author: author || "Admin",
+      priority: priority || "low",
       imageUrl: imageUrl || "",
       createdAt: new Date().toISOString(),
     };
@@ -230,16 +245,31 @@ app.patch("/make-server-97d3df46/announcements/:id", async (c) => {
     }
 
     const body = await c.req.json();
-    const { title, content, imageUrl } = body;
+    const {
+      title,
+      content,
+      description,
+      category,
+      eventDate,
+      eventTime,
+      author,
+      priority,
+      imageUrl,
+    } = body;
 
-    if (!title || !content) {
-      return c.json({ error: "Missing required fields: title, content" }, 400);
+    if (!title || !(description || content)) {
+      return c.json({ error: "Missing required fields: title, description" }, 400);
     }
 
     const updatedAnnouncement = {
       ...announcement,
       title,
-      content,
+      category: category || announcement.category || "Announcement",
+      description: description || content || "",
+      eventDate: eventDate || "",
+      eventTime: eventTime || "",
+      author: author || announcement.author || "Admin",
+      priority: priority || announcement.priority || "low",
       imageUrl: imageUrl || "",
     };
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { API_URL, supabase } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
 import sampleLogo from "../../assets/Sample Barangay Logo.png"
 import manilaLogo from "../../assets/Manila.png"
@@ -14,6 +14,7 @@ interface Announcement {
   eventDate: string;
   author: string;
   priority: string;
+  imageUrl: string;
   createdAt: string;
 }
 
@@ -40,6 +41,8 @@ interface AyudaProgram {
 }
 
 const CARDS_PER_VIEW = 3;
+const ANNOUNCEMENT_OVERRIDES_KEY = "announcement_overrides";
+const HIDDEN_ANNOUNCEMENTS_KEY = "hidden_announcements";
 
 export default function Homepage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -58,22 +61,39 @@ export default function Homepage() {
   const fetchData = async () => {
     try {
       const [announcementsRes, projectsRes, ayudaRes] = await Promise.all([
-        supabase.from("updates").select("*").order("created_at", { ascending: false }),
+        fetch(`${API_URL}/announcements`),
         supabase.from("projects").select("*").order("created_at", { ascending: false }),
         supabase.from("ayuda_programs").select("*").order("created_at", { ascending: false }),
       ]);
 
-      if (announcementsRes.data) {
-        setAnnouncements(announcementsRes.data.map((a: any) => ({
-          id: a.id,
-          title: a.title,
-          category: a.category,
-          description: a.description,
-          eventDate: a.event_date || "",
-          author: a.author,
-          priority: a.priority,
-          createdAt: a.created_at,
-        })));
+      if (announcementsRes.ok) {
+        const result = await announcementsRes.json();
+        const overrides = (() => {
+          try {
+            return JSON.parse(localStorage.getItem(ANNOUNCEMENT_OVERRIDES_KEY) || "{}") as Record<string, Announcement>;
+          } catch {
+            return {};
+          }
+        })();
+        const hidden = (() => {
+          try {
+            return new Set(JSON.parse(localStorage.getItem(HIDDEN_ANNOUNCEMENTS_KEY) || "[]") as string[]);
+          } catch {
+            return new Set<string>();
+          }
+        })();
+
+        setAnnouncements((result.announcements || []).map((announcement: any) => ({
+          id: announcement.id,
+          title: announcement.title,
+          category: announcement.category || "Announcement",
+          description: announcement.description || announcement.content || "",
+          eventDate: announcement.eventDate || "",
+          author: announcement.author || "Admin",
+          priority: announcement.priority || "low",
+          imageUrl: announcement.imageUrl || "",
+          createdAt: announcement.createdAt,
+        })).filter((announcement: Announcement) => !hidden.has(announcement.id)).map((announcement: Announcement) => overrides[announcement.id] || announcement));
       }
 
       if (projectsRes.data) {
@@ -253,13 +273,19 @@ export default function Homepage() {
                 {announcements.slice(announcementIndex, announcementIndex + CARDS_PER_VIEW).map((announcement) => (
                   <div key={announcement.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
                     <div className={`h-2 w-full ${announcement.priority === 'high' ? 'bg-red-500' : announcement.priority === 'medium' ? 'bg-orange-500' : 'bg-green-500'}`} />
+                    {announcement.imageUrl && (
+                      <img
+                        src={announcement.imageUrl}
+                        alt={announcement.title}
+                        className="h-48 w-full object-cover"
+                      />
+                    )}
                     <div className="p-4 sm:p-5">
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                          announcement.category?.toLowerCase() === 'event' ? 'bg-purple-100 text-purple-800' :
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${announcement.category?.toLowerCase() === 'event' ? 'bg-purple-100 text-purple-800' :
                           announcement.category?.toLowerCase() === 'notice' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
+                            'bg-blue-100 text-blue-800'
+                          }`}>
                           {announcement.category}
                         </span>
                         <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
@@ -282,7 +308,7 @@ export default function Homepage() {
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="relative z-10 py-12 md:py-16" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}>
+      <section id="projects" className="relative z-10 py-12 md:py-16" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', marginTop: "30px" }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 md:mb-10">
             <h2
