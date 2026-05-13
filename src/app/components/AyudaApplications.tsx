@@ -18,7 +18,6 @@ export default function AyudaApplications() {
   const navigate = useNavigate();
   const [ayudaAnnouncements, setAyudaAnnouncements] = useState<AyudaAnnouncement[]>([]);
   const [accessToken, setAccessToken] = useState("");
-  const [error, setError] = useState("");
 
   useEffect(() => {
     checkAuth();
@@ -44,11 +43,14 @@ export default function AyudaApplications() {
       const response = await fetch(`${API_URL}/ayuda`, {
         headers: { Authorization: `Bearer ${publicAnonKey}` },
       });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ayuda announcements (${response.status})`);
+      }
       const data = await response.json();
       setAyudaAnnouncements(data.ayuda || []);
     } catch (fetchError) {
       console.error("Error fetching ayuda announcements:", fetchError);
-      setError("Failed to load ayuda applications.");
+      setAyudaAnnouncements([]);
     }
   };
 
@@ -68,12 +70,6 @@ export default function AyudaApplications() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-            {error}
-          </div>
-        )}
-
         <div className="bg-white rounded-lg shadow-md p-8">
           <h2 className="mb-6 text-2xl font-bold text-gray-900">All Online Ayuda Applications</h2>
 
@@ -81,6 +77,7 @@ export default function AyudaApplications() {
             <div className="py-12 text-center">
               <HandHelping className="mx-auto mb-4 h-16 w-16 text-gray-400" />
               <p className="text-gray-500">No online ayuda applications available yet.</p>
+              <p className="mt-2 text-sm text-gray-400">Resident application data will appear here once the mobile app submission flow is connected to the backend.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -98,7 +95,7 @@ export default function AyudaApplications() {
                     <Calendar className="h-4 w-4" />
                     {new Date(ayuda.date).toLocaleDateString()}
                   </div>
-                  <p className="text-sm text-gray-500">Resident applications will appear here once the mobile submission flow is connected.</p>
+                  <p className="text-sm text-gray-500">Resident applications for this online ayuda should be fetched from the mobile app backend submission flow.</p>
                 </div>
               ))}
             </div>
