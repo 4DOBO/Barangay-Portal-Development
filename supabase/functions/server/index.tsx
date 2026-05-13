@@ -282,6 +282,148 @@ app.delete("/make-server-97d3df46/announcements/:id", async (c) => {
   }
 });
 
+// Create ayuda announcement (admin only)
+app.post("/make-server-97d3df46/ayuda", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized ayuda creation attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const body = await c.req.json();
+    const { title, shortDescription, date, requirements, distributionMode, imageUrl } = body;
+
+    if (!title || !shortDescription || !date || !requirements || !distributionMode) {
+      return c.json({ error: "Missing required fields: title, shortDescription, date, requirements, distributionMode" }, 400);
+    }
+
+    if (!["online", "face_to_face"].includes(distributionMode)) {
+      return c.json({ error: "Invalid distribution mode. Must be: online or face_to_face" }, 400);
+    }
+
+    const ayudaId = `ayuda_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const ayuda = {
+      id: ayudaId,
+      title,
+      shortDescription,
+      date,
+      requirements,
+      distributionMode,
+      imageUrl: imageUrl || "",
+      createdAt: new Date().toISOString(),
+    };
+
+    await kv.set(ayudaId, ayuda);
+    console.log(`Ayuda created successfully: ${ayudaId}`);
+    return c.json({ success: true, ayuda }, 201);
+  } catch (error) {
+    console.log(`Error creating ayuda: ${error}`);
+    return c.json({ error: `Failed to create ayuda: ${error.message}` }, 500);
+  }
+});
+
+// Get all ayuda announcements
+app.get("/make-server-97d3df46/ayuda", async (c) => {
+  try {
+    const ayudaAnnouncements = await kv.getByPrefix("ayuda_");
+    ayudaAnnouncements.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    console.log(`Retrieved ${ayudaAnnouncements.length} ayuda announcements`);
+    return c.json({ success: true, ayuda: ayudaAnnouncements });
+  } catch (error) {
+    console.log(`Error retrieving ayuda: ${error}`);
+    return c.json({ error: `Failed to retrieve ayuda: ${error.message}` }, 500);
+  }
+});
+
+// Update ayuda announcement (admin only)
+app.patch("/make-server-97d3df46/ayuda/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized ayuda update attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const ayudaId = c.req.param("id");
+    const ayuda = await kv.get(ayudaId);
+    if (!ayuda) {
+      return c.json({ error: "Ayuda announcement not found" }, 404);
+    }
+
+    const body = await c.req.json();
+    const { title, shortDescription, date, requirements, distributionMode, imageUrl } = body;
+
+    if (!title || !shortDescription || !date || !requirements || !distributionMode) {
+      return c.json({ error: "Missing required fields: title, shortDescription, date, requirements, distributionMode" }, 400);
+    }
+
+    if (!["online", "face_to_face"].includes(distributionMode)) {
+      return c.json({ error: "Invalid distribution mode. Must be: online or face_to_face" }, 400);
+    }
+
+    const updatedAyuda = {
+      ...ayuda,
+      title,
+      shortDescription,
+      date,
+      requirements,
+      distributionMode,
+      imageUrl: imageUrl || "",
+    };
+
+    await kv.set(ayudaId, updatedAyuda);
+    console.log(`Ayuda updated successfully: ${ayudaId}`);
+    return c.json({ success: true, ayuda: updatedAyuda });
+  } catch (error) {
+    console.log(`Error updating ayuda: ${error}`);
+    return c.json({ error: `Failed to update ayuda: ${error.message}` }, 500);
+  }
+});
+
+// Delete ayuda announcement (admin only)
+app.delete("/make-server-97d3df46/ayuda/:id", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!user?.id) {
+      console.log(`Unauthorized ayuda delete attempt: ${authError?.message || "No user found"}`);
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const ayudaId = c.req.param("id");
+    const ayuda = await kv.get(ayudaId);
+    if (!ayuda) {
+      return c.json({ error: "Ayuda announcement not found" }, 404);
+    }
+
+    await kv.del(ayudaId);
+    console.log(`Ayuda deleted successfully: ${ayudaId}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log(`Error deleting ayuda: ${error}`);
+    return c.json({ error: `Failed to delete ayuda: ${error.message}` }, 500);
+  }
+});
+
 // Create project (admin only)
 app.post("/make-server-97d3df46/projects", async (c) => {
   try {

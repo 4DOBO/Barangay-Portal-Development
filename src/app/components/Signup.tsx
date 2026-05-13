@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Lock, Mail, User } from "lucide-react";
 import { API_URL, publicAnonKey } from "../../lib/supabase";
+import barangayBg from "../../assets/Barangay.png";
+import sampleLogo from "../../assets/Sample Barangay Logo.png";
+import manilaLogo from "../../assets/Manila.png";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -50,15 +53,59 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-              B
+    <div className="relative h-screen overflow-hidden px-4 sm:px-6 lg:px-8">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
+      <div
+        aria-hidden="true"
+        style={{
+          backgroundImage: `url(${barangayBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          backgroundRepeat: "no-repeat",
+          opacity: 0.5,
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+      <div className="relative z-10 mx-auto flex h-full max-w-md items-center justify-center">
+        <div className="w-full p-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
+          <div className="mb-10 text-center">
+            <h2
+              className="text-black"
+              style={{ fontFamily: "'Mate SC', serif", fontSize: "32px", fontWeight: 400, lineHeight: 1.1, marginTop: '-30px' }}
+            >
+              BARANGAY MALIGAYA
+            </h2>
+            <div className="mx-auto mt-4 w-full max-w-[280px]" style={{ borderTop: "3px solid #000000", marginTop: '10px' }} />
+            <p
+              className="mt-4 text-black"
+              style={{ fontFamily: "'Mate SC', serif", fontSize: "32px", fontWeight: 400, lineHeight: 1.1, marginTop: '5px' }}
+            >
+              lungsod ng maynila
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-0">
+              <img
+                src={sampleLogo}
+                alt="Sample Barangay Logo"
+                className="object-contain"
+                style={{ width: "140px", height: "140px", marginTop: '-30px', marginRight: '10px' }}
+              />
+              <img
+                src={manilaLogo}
+                alt="Manila Logo"
+                className="object-contain"
+                style={{ width: "90px", height: "90px", marginTop: '-30px', marginRight: '25px' }}
+              />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Create Admin Account</h2>
-            <p className="text-gray-600 mt-2">Sign up to manage the barangay portal</p>
+            <h3
+              className="text-black"
+              style={{ fontFamily: "'Mate SC', serif", fontSize: "32px", fontWeight: 400, lineHeight: 1.1, marginTop: '10px' }}
+            >
+              Create New Admin
+            </h3>
           </div>
 
           {error && (
@@ -75,7 +122,7 @@ export default function Signup() {
 
           <form onSubmit={handleSignup} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-semibold text-black mb-2">
                 Full Name
               </label>
               <div className="relative">
@@ -86,14 +133,14 @@ export default function Signup() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-[45px] bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Juan Dela Cruz"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-black mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -104,14 +151,14 @@ export default function Signup() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-[45px] bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="admin@barangay.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-black mb-2">
                 Password
               </label>
               <div className="relative">
@@ -123,7 +170,7 @@ export default function Signup() {
                   minLength={6}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-[45px] bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter your password (min 6 characters)"
                 />
               </div>
@@ -132,14 +179,14 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-[45px] font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-black-600">
               Already have an account?{" "}
               <button
                 onClick={() => navigate("/login")}
@@ -153,7 +200,7 @@ export default function Signup() {
           <div className="mt-4 text-center">
             <button
               onClick={() => navigate("/")}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="text-sm text-black-600 hover:text-blue-700"
             >
               Back to Homepage
             </button>

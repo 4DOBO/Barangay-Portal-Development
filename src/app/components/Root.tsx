@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink, useLocation, useNavigate } from "react-router";
-import { Menu, X, LogOut, FileText, Megaphone, FolderKanban } from "lucide-react";
+import { Menu, X, LogOut, FileText, Megaphone, FolderKanban, HandHelping, ClipboardList } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import sampleLogo from "../../assets/Sample Barangay Logo.png";
@@ -127,6 +127,43 @@ export default function Root() {
                       style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
                     >
                       Projects
+                    </NavLink>
+                  </div>
+                  <div className="flex w-full max-w-[320px] items-center gap-2">
+                    <NavLink
+                      to="/admin/ayuda"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                    >
+                      <HandHelping className="h-10 w-10" />
+                    </NavLink>
+                    <NavLink
+                      to="/admin/ayuda"
+                      className={({ isActive }) =>
+                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                        }`
+                      }
+                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
+                    >
+                      Ayuda
+                    </NavLink>
+                  </div>
+                  <div className="flex w-full max-w-[320px] items-center gap-2">
+                    <NavLink
+                      to="/admin/ayuda-applications"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
+                    >
+                      <ClipboardList className="h-10 w-10" />
+                    </NavLink>
+                    <NavLink
+                      to="/admin/ayuda-applications"
+                      className={({ isActive }) =>
+                        `flex h-16 w-[286px] items-center justify-start rounded-[15px] px-6 transition ${
+                          isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
+                        }`
+                      }
+                      style={{ fontSize: "27px", fontFamily: "'Poppins', sans-serif" }}
+                    >
+                      Applications
                     </NavLink>
                   </div>
                 </nav>
@@ -321,13 +358,13 @@ export default function Root() {
                     <a href="/#projects" className="text-gray-300 hover:text-white transition" style={{ marginLeft: 250 }}>
                       Projects
                     </a>
-                    <button
-                      type="button"
+                    <a
+                      href="/#ayuda"
                       className="text-left text-gray-300 hover:text-white transition"
-                      style={{ marginLeft: 250, background: "none", border: "none", padding: 0 }}
+                      style={{ marginLeft: 250 }}
                     >
                       Ayuda
-                    </button>
+                    </a>
                     {isAdmin && (
                       <>
                         <Link to="/admin/reports" className="text-gray-300 hover:text-white transition">Reports Dashboard</Link>
