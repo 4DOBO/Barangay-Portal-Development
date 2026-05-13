@@ -22,6 +22,23 @@ export default function ManageProjects() {
   const [showForm, setShowForm] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
 
+  const [displayName, setDisplayName] = useState("Admin");
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      navigate("/login");
+      return;
+    }
+    // Fetch user name to satisfy the 'author' requirement in the updates table
+    const name =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.name ||
+      session.user.email?.split("@")[0] || "Admin";
+    setDisplayName(name);
+    setAccessToken(session.access_token);
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -39,20 +56,12 @@ export default function ManageProjects() {
     }
   }, [accessToken]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      navigate("/login");
-      return;
-    }
-    setAccessToken(session.access_token);
-  };
-
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
-        .from("projects")
+        .from("updates") // <--- Changed from "projects"
         .select("*")
+        .eq("category", "Project") // <--- Only fetch projects
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -63,7 +72,7 @@ export default function ManageProjects() {
           title: p.title,
           description: p.description,
           imageUrl: p.image_url || "",
-          status: p.status,
+          status: p.status || "ongoing",
           createdAt: p.created_at,
         }));
         setProjects(mapped);
@@ -86,17 +95,20 @@ export default function ManageProjects() {
         description: formData.description,
         image_url: formData.imageUrl,
         status: formData.status,
+        category: "Project", // <--- Required by updates table
+        author: displayName, // <--- Required by updates table
+        priority: "low",     // <--- Required by updates table
       };
 
       if (isEditing) {
         const { error: updateError } = await supabase
-          .from("projects")
+          .from("updates") // <--- Changed from "projects"
           .update(dbData)
           .eq("id", editingProjectId);
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
-          .from("projects")
+          .from("updates") // <--- Changed from "projects"
           .insert([dbData]);
         if (insertError) throw insertError;
       }
@@ -134,7 +146,7 @@ export default function ManageProjects() {
 
     try {
       const { error: deleteError } = await supabase
-        .from("projects")
+        .from("updates") // <--- Changed from "projects"
         .delete()
         .eq("id", projectId);
 
@@ -179,7 +191,7 @@ export default function ManageProjects() {
                 {showForm ? "Cancel" : "New Project"}
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
                 <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
@@ -330,11 +342,10 @@ export default function ManageProjects() {
                   <div className="p-6 pb-16">
                     <div className="flex items-center justify-between mb-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          project.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${project.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-blue-100 text-blue-800"
+                          }`}
                       >
                         {project.status === "completed" ? "Completed" : "Ongoing"}
                       </span>

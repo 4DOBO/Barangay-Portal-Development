@@ -119,30 +119,29 @@ export default function ManageAnnouncements() {
 
   const fetchUpdates = async () => {
     try {
-      const response = await fetch(`${API_URL}/announcements`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const { data, error } = await supabase
+        .from("updates")
+        .select("*")
+        .neq("category", "Project") // <--- Added this line
+        .order("created_at", { ascending: false });
 
-      if (response.ok) {
-        const result = await response.json();
-        const mapped: Update[] = (result.announcements || []).map((announcement: any) => ({
-          id: announcement.id,
-          title: announcement.title,
-          category: announcement.category || "Announcement",
-          description: announcement.description || announcement.content || "",
-          eventDate: announcement.eventDate || "",
-          eventTime: announcement.eventTime || "",
-          author: announcement.author || "Admin",
-          priority: announcement.priority || "low",
-          imageUrl: announcement.imageUrl || "",
-          createdAt: announcement.createdAt,
+      if (error) throw error;
+
+      if (data) {
+        const mapped: Update[] = data.map((u: any) => ({
+          id: u.id,
+          title: u.title,
+          category: u.category,
+          description: u.description,
+          eventDate: u.event_date || "",
+          eventTime: u.event_time || "",
+          author: u.author,
+          priority: u.priority,
+          createdAt: u.created_at,
+          imageUrl: u.image_url || "",
         }));
-        setUpdates(mergeAnnouncements(mapped));
-        return;
+        setUpdates(mapped);
       }
-      setUpdates([]);
     } catch (err) {
       console.error("Error fetching updates:", err);
       setUpdates([]);
@@ -470,7 +469,7 @@ export default function ManageAnnouncements() {
                 {showForm ? "Cancel" : "New Update"}
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
                 <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
@@ -687,7 +686,7 @@ export default function ManageAnnouncements() {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{update.title}</h3>
                     <p className="text-sm text-gray-600 mb-3 line-clamp-3">{update.description}</p>
-                    
+
                     <div className="flex flex-wrap gap-3 text-xs text-gray-500">
                       {update.eventDate && (
                         <div className="flex items-center gap-1">
