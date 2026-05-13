@@ -23,6 +23,7 @@ export default function ManageAyuda() {
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingAyudaId, setEditingAyudaId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"programs" | "applications">("programs");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -145,36 +146,55 @@ export default function ManageAyuda() {
     }
   };
 
+  const onlineAyuda = ayudaAnnouncements.filter((ayuda) => ayuda.distributionMode === "online");
+
   return (
     <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400 }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex-1">
-            {showForm && (
-              <h1
-                className="text-center text-gray-900"
-                style={{ fontFamily: "'Mate SC', serif", fontSize: "40px", fontWeight: 400 }}
-              >
-                {editingAyudaId ? "Edit Ayuda" : "Create Ayuda"}
-              </h1>
-            )}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab("programs")}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                activeTab === "programs"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+              }`}
+            >
+              Ayuda Programs
+            </button>
+            <button
+              onClick={() => setActiveTab("applications")}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                activeTab === "applications"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+              }`}
+            >
+              Ayuda Applications
+            </button>
           </div>
-          <button
-            onClick={() => {
-              if (showForm) {
-                setShowForm(false);
-                setEditingAyudaId(null);
-                setFormData({ title: "", shortDescription: "", date: "", requirements: "", distributionMode: "online", imageUrl: "" });
-              } else {
-                setShowForm(true);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            {showForm ? "Cancel" : "New Ayuda"}
-          </button>
+          {activeTab === "programs" && (
+            <button
+              onClick={() => {
+                if (showForm) {
+                  setShowForm(false);
+                  setEditingAyudaId(null);
+                  setFormData({ title: "", shortDescription: "", date: "", requirements: "", distributionMode: "online", imageUrl: "" });
+                } else {
+                  setShowForm(true);
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
+            >
+              <Plus className="w-5 h-5" />
+              {showForm ? "Cancel" : "New Ayuda"}
+            </button>
+          )}
         </div>
+
+        {activeTab === "programs" && (
+          <>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -349,6 +369,42 @@ export default function ManageAyuda() {
             </div>
           )}
         </div>
+          </>
+        )}
+
+        {activeTab === "applications" && (
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">All Online Ayuda Applications</h2>
+
+            {onlineAyuda.length === 0 ? (
+              <div className="py-12 text-center">
+                <HandHelping className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+                <p className="text-gray-500">No online ayuda applications available yet.</p>
+                <p className="mt-2 text-sm text-gray-400">Resident application data will appear here once the mobile app submission flow is connected to the backend.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {onlineAyuda.map((ayuda) => (
+                  <div key={ayuda.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h3 className="text-xl font-bold text-gray-900">{ayuda.title}</h3>
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+                        Online
+                      </span>
+                    </div>
+                    <p className="mb-2 text-sm text-gray-700"><span className="font-semibold">Short Description:</span> {ayuda.shortDescription}</p>
+                    <p className="mb-2 text-sm text-gray-700"><span className="font-semibold">Requirements:</span> {ayuda.requirements}</p>
+                    <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(ayuda.date).toLocaleDateString()}
+                    </div>
+                    <p className="text-sm text-gray-500">Resident applications for this online ayuda should be fetched from the mobile app backend submission flow.</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

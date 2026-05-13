@@ -170,60 +170,7 @@ export default function Root() {
                       </NavLink>
                     )}
                   </div>
-                  <div className="flex w-full max-w-[260px] items-center gap-0">
-                    <NavLink
-                      to="/admin/ayuda"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
-                    >
-                      <HandHelping className="h-6 w-6" />
-                    </NavLink>
-                    <NavLink
-                      to="/admin/ayuda"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Ayuda
-                    </NavLink>
-                  </div>
-                  <div className="flex w-full max-w-[320px] items-center gap-2">
-                    <NavLink
-                      to="/admin/ayuda-applications"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
-                    >
-                      <ClipboardList className="h-10 w-10" />
-                    </NavLink>
-                    <NavLink
-                      to="/admin/announcements"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[286px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "30px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Announcements
-                    </NavLink>
-                  </div>
-                  <div className="flex w-full max-w-[320px] items-center gap-2">
-                    <NavLink
-                      to="/admin/projects"
-                      className="flex h-14 w-14 shrink-0 items-center justify-center text-black transition hover:opacity-70"
-                    >
-                      <HandHelping className="h-10 w-10" />
-                    </NavLink>
-                    <NavLink
-                      to="/admin/projects"
-                      className={({ isActive }) =>
-                        `flex h-16 w-[266px] items-center justify-start rounded-[15px] px-6 transition ${isActive ? "bg-[#1350A3] text-white" : "text-[#1350A3] hover:bg-gray-200"
-                        }`
-                      }
-                      style={{ fontSize: "32px", fontFamily: "'Poppins', sans-serif" }}
-                    >
-                      Projects
-                    </NavLink>
-                  </div>
+
                 </nav>
               </div>
             </div>
@@ -520,7 +467,7 @@ export default function Root() {
                       style={{ background: "none", border: "none", padding: 0 }}
                     >
                       Ayuda
-                    </a>
+                    </button>
                     {isAdmin && (
                       <>
                         <Link to="/admin/reports" className="text-gray-200 hover:text-white transition">Reports Dashboard</Link>

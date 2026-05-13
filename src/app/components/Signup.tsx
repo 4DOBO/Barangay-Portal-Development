@@ -4,7 +4,6 @@ import { Lock, Mail, User } from "lucide-react";
 import { supabase, API_URL, publicAnonKey } from "../../lib/supabase";
 import barangayBg from "../../assets/Barangay.png";
 import sampleLogo from "../../assets/Sample Barangay Logo.png";
-import manilaLogo from "../../assets/Manila.png";
 
 export default function Signup() {
   const navigate = useNavigate();
