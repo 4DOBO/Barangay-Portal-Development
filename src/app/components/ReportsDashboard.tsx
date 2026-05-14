@@ -114,17 +114,17 @@ export default function ReportsDashboard() {
 
   const updateReportStatus = async (reportId: string, newStatus: "pending" | "in-progress" | "completed") => {
     try {
-      const { data, error } = await supabase
+      const dbStatus =
+        newStatus === "in-progress" ? "in_progress" :
+        newStatus === "completed" ? "done" :
+        "pending";
+
+      const { error } = await supabase
         .from("reports")
-        .update({ status: newStatus })
-        .eq("id", reportId)
-        .select();
+        .update({ status: dbStatus })
+        .eq("id", reportId);
 
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error("Update blocked by database. Please check your admin permissions or Supabase RLS policies.");
-      }
 
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r))
@@ -140,17 +140,12 @@ export default function ReportsDashboard() {
     if (!confirmed) return;
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("reports")
         .delete()
-        .eq("id", reportId)
-        .select();
+        .eq("id", reportId);
 
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error("Delete blocked by database. Please check your admin permissions.");
-      }
 
       // If the deleted report was currently selected, clear the right panel
       if (reportId === selectedReportId) {

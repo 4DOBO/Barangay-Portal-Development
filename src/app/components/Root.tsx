@@ -302,9 +302,9 @@ export default function Root() {
                     className="w-10 h-10 sm:w-14 sm:h-14 object-contain"
                   />
                   <div className="flex flex-col">
-                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 700, color: '#1350A3', lineHeight: 1.15 }} className="text-md sm:text-xl">Barangay Portal</span>
-                    <hr style={{ border: 'none', borderTop: '1px solid #ccc', margin: '2px 0' }} />
-                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 400, color: '#555' }} className="text-sm sm:text-lg">Lungsod ng Maynila</span>
+                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 700, color: '#000000', lineHeight: 1.15 }} className="text-md sm:text-xl">BARANGAY MALIGAYA</span>
+                    <hr style={{ border: 'none', borderTop: '1px solid #000000', margin: '2px 0' }} />
+                    <span style={{ fontFamily: "'Mate SC', serif", fontWeight: 400, color: '#000000' }} className="text-sm sm:text-lg">lungsod ng maynila</span>
                   </div>
                 </Link>
 

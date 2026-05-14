@@ -83,6 +83,47 @@ export default function ManageProjects() {
     }
   };
 
+  const convertFileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result !== "string") {
+          reject(new Error("Failed to read image file."));
+          return;
+        }
+
+        const image = new Image();
+        image.onload = () => {
+          const maxWidth = 1200;
+          const maxHeight = 1200;
+          let { width, height } = image;
+
+          if (width > maxWidth || height > maxHeight) {
+            const scale = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+
+          if (!context) {
+            reject(new Error("Failed to process image file."));
+            return;
+          }
+
+          context.drawImage(image, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        image.onerror = () => reject(new Error("Failed to process image file."));
+        image.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error("Failed to read image file."));
+      reader.readAsDataURL(file);
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -92,27 +133,9 @@ export default function ManageProjects() {
     try {
       let finalImageUrl = formData.imageUrl;
 
-      // --- NEW UPLOAD LOGIC ---
       if (imageFile) {
-        // Generate a unique filename to prevent overwriting
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-        // Upload the file to Supabase Storage
-        const { error: uploadError } = await supabase.storage
-          .from('barangay-images')
-          .upload(fileName, imageFile);
-
-        if (uploadError) throw uploadError;
-
-        // Get the public URL of the newly uploaded image
-        const { data: publicUrlData } = supabase.storage
-          .from('barangay-images')
-          .getPublicUrl(fileName);
-
-        finalImageUrl = publicUrlData.publicUrl;
+        finalImageUrl = await convertFileToDataUrl(imageFile);
       }
-      // -------------------------
 
       const isEditing = Boolean(editingProjectId);
       const dbData = {

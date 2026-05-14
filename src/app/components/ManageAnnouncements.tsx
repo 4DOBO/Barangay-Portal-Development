@@ -1,7 +1,7 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Megaphone, Plus, Trash2, Calendar, Pencil, Clock, Tag } from "lucide-react";
-import { API_URL, supabase } from "../../lib/supabase";
+import { Megaphone, Plus, Trash2, Calendar, Pencil, Clock, Tag, X } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 interface Update {
   id: string;
@@ -16,9 +16,6 @@ interface Update {
   createdAt: string;
 }
 
-const ANNOUNCEMENT_OVERRIDES_KEY = "announcement_overrides";
-const HIDDEN_ANNOUNCEMENTS_KEY = "hidden_announcements";
-
 export default function ManageAnnouncements() {
   const navigate = useNavigate();
   const [updates, setUpdates] = useState<Update[]>([]);
@@ -29,8 +26,7 @@ export default function ManageAnnouncements() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Admin");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const emptyForm = {
     title: "",
@@ -53,56 +49,6 @@ export default function ManageAnnouncements() {
     }
   }, [accessToken]);
 
-  const getAnnouncementOverrides = () => {
-    try {
-      return JSON.parse(localStorage.getItem(ANNOUNCEMENT_OVERRIDES_KEY) || "{}") as Record<string, Update>;
-    } catch {
-      return {};
-    }
-  };
-
-  const saveAnnouncementOverride = (announcement: Update) => {
-    const overrides = getAnnouncementOverrides();
-    overrides[announcement.id] = announcement;
-    localStorage.setItem(ANNOUNCEMENT_OVERRIDES_KEY, JSON.stringify(overrides));
-  };
-
-  const buildOverrideUpdate = (id: string, imageUrl: string) => ({
-    id,
-    title: formData.title,
-    category: formData.category,
-    description: formData.description,
-    eventDate: formData.eventDate || "",
-    eventTime: formData.eventTime || "",
-    author: displayName,
-    priority: formData.priority,
-    imageUrl,
-    createdAt: updates.find((update) => update.id === id)?.createdAt || new Date().toISOString(),
-  });
-
-  const getHiddenAnnouncements = () => {
-    try {
-      return JSON.parse(localStorage.getItem(HIDDEN_ANNOUNCEMENTS_KEY) || "[]") as string[];
-    } catch {
-      return [];
-    }
-  };
-
-  const hideAnnouncement = (announcementId: string) => {
-    const hidden = new Set(getHiddenAnnouncements());
-    hidden.add(announcementId);
-    localStorage.setItem(HIDDEN_ANNOUNCEMENTS_KEY, JSON.stringify(Array.from(hidden)));
-  };
-
-  const mergeAnnouncements = (items: Update[]) => {
-    const overrides = getAnnouncementOverrides();
-    const hidden = new Set(getHiddenAnnouncements());
-
-    return items
-      .filter((item) => !hidden.has(item.id))
-      .map((item) => overrides[item.id] || item);
-  };
-
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
@@ -122,7 +68,7 @@ export default function ManageAnnouncements() {
       const { data, error } = await supabase
         .from("updates")
         .select("*")
-        .neq("category", "Project") // <--- Added this line
+        .in("category", ["Announcement", "Event", "Notice"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -146,10 +92,6 @@ export default function ManageAnnouncements() {
       console.error("Error fetching updates:", err);
       setUpdates([]);
     }
-  };
-
-  const uploadAnnouncementImage = async (file: File) => {
-    return await convertFileToDataUrl(file);
   };
 
   const convertFileToDataUrl = (file: File) =>
@@ -193,19 +135,6 @@ export default function ManageAnnouncements() {
       reader.readAsDataURL(file);
     });
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    setSelectedImage(file);
-
-    if (!file) {
-      setImagePreviewUrl(formData.imageUrl);
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreviewUrl(previewUrl);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -214,25 +143,13 @@ export default function ManageAnnouncements() {
 
     try {
       const isEditing = Boolean(editingId);
-      let imageUrl = formData.imageUrl;
+      let finalImageUrl = formData.imageUrl;
 
-      if (selectedImage) {
-        imageUrl = await uploadAnnouncementImage(selectedImage);
+      if (imageFile) {
+        finalImageUrl = await convertFileToDataUrl(imageFile);
       }
 
-      const payload = {
-        title: formData.title,
-        content: formData.description,
-        category: formData.category,
-        description: formData.description,
-        eventDate: formData.eventDate || "",
-        eventTime: formData.eventTime || "",
-        author: displayName,
-        priority: formData.priority,
-        imageUrl,
-      };
-
-      const legacyPayload = {
+      const dbData = {
         title: formData.title,
         category: formData.category,
         description: formData.description,
@@ -240,99 +157,27 @@ export default function ManageAnnouncements() {
         event_time: formData.eventTime || null,
         author: displayName,
         priority: formData.priority,
+        image_url: finalImageUrl,
       };
 
       if (isEditing) {
-        if (editingId?.startsWith("announcement_")) {
-          saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
-          setSuccess("Update saved successfully!");
-          setFormData(emptyForm);
-          setEditingId(null);
-          setShowForm(false);
-          setSelectedImage(null);
-          setImagePreviewUrl("");
-          fetchUpdates();
-          setTimeout(() => setSuccess(""), 3000);
-          return;
-        }
-
-        const response = await fetch(`${API_URL}/announcements/${editingId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          if (editingId) {
-            saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
-          }
-          setSuccess("Update saved successfully!");
-        } else if (response.status === 404 && editingId && !editingId.startsWith("announcement_")) {
-          const { error: updateError } = await supabase
-            .from("updates")
-            .update(legacyPayload)
-            .eq("id", editingId);
-
-          if (updateError) {
-            throw updateError;
-          }
-
-          saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
-        } else if (response.status === 404 && editingId?.startsWith("announcement_")) {
-          saveAnnouncementOverride(buildOverrideUpdate(editingId, imageUrl));
-          setSuccess("Update saved successfully!");
-        } else {
-          const result = await response.json().catch(() => null);
-          throw new Error(result?.error || "Failed to save update");
-        }
+        const { error: updateError } = await supabase
+          .from("updates")
+          .update(dbData)
+          .eq("id", editingId);
+        if (updateError) throw updateError;
       } else {
-        const response = await fetch(`${API_URL}/announcements`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          const result = await response.json().catch(() => null);
-          const createdId = result?.announcement?.id;
-          if (createdId) {
-            saveAnnouncementOverride(buildOverrideUpdate(createdId, imageUrl));
-          }
-          setSuccess("Update published successfully!");
-        } else if (response.status === 404) {
-          const { data: insertedUpdate, error: insertError } = await supabase
-            .from("updates")
-            .insert([legacyPayload])
-            .select()
-            .single();
-
-          if (insertError) {
-            throw insertError;
-          }
-
-          if (insertedUpdate?.id) {
-            saveAnnouncementOverride(buildOverrideUpdate(insertedUpdate.id, imageUrl));
-          }
-        } else {
-          const result = await response.json().catch(() => null);
-          throw new Error(result?.error || "Failed to save update");
-        }
+        const { error: insertError } = await supabase
+          .from("updates")
+          .insert([dbData]);
+        if (insertError) throw insertError;
       }
 
-      if (!success) {
-        setSuccess(`Update ${isEditing ? "saved" : "published"} successfully!`);
-      }
+      setSuccess(`Update ${isEditing ? "saved" : "published"} successfully!`);
       setFormData(emptyForm);
       setEditingId(null);
       setShowForm(false);
-      setSelectedImage(null);
-      setImagePreviewUrl("");
+      setImageFile(null);
       fetchUpdates();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -354,8 +199,7 @@ export default function ManageAnnouncements() {
       priority: update.priority,
       imageUrl: update.imageUrl,
     });
-    setSelectedImage(null);
-    setImagePreviewUrl(update.imageUrl);
+    setImageFile(null);
     setShowForm(true);
     setError("");
     setSuccess("");
@@ -366,57 +210,17 @@ export default function ManageAnnouncements() {
     if (!confirmed) return;
 
     try {
-      const isFunctionAnnouncement = updateId.startsWith("announcement_");
-      let deleted = false;
-
-      if (!isFunctionAnnouncement) {
-        const response = await fetch(`${API_URL}/announcements/${updateId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        if (response.ok) {
-          deleted = true;
-        } else if (response.status === 404) {
-          const { error: legacyDeleteError } = await supabase
-            .from("updates")
-            .delete()
-            .eq("id", updateId);
-
-          if (!legacyDeleteError) {
-            deleted = true;
-          } else {
-            const result = await response.json().catch(() => null);
-            throw new Error(result?.error || "Failed to delete update");
-          }
-        } else {
-          const result = await response.json().catch(() => null);
-          throw new Error(result?.error || "Failed to delete update");
-        }
-      } else {
-        hideAnnouncement(updateId);
-        deleted = true;
-      }
-
-      if (!deleted && !isFunctionAnnouncement) {
-        const { error: legacyDeleteError } = await supabase
-          .from("updates")
-          .delete()
-          .eq("id", updateId);
-        if (legacyDeleteError) {
-          throw new Error("Failed to delete update");
-        }
-      }
-
+      const { error: deleteError } = await supabase
+        .from("updates")
+        .delete()
+        .eq("id", updateId);
+      if (deleteError) throw deleteError;
       setUpdates((prev) => prev.filter((u) => u.id !== updateId));
       if (editingId === updateId) {
         setEditingId(null);
         setFormData(emptyForm);
         setShowForm(false);
-        setSelectedImage(null);
-        setImagePreviewUrl("");
+        setImageFile(null);
       }
     } catch (err: any) {
       console.error("Error deleting update:", err);
@@ -457,8 +261,7 @@ export default function ManageAnnouncements() {
                     setShowForm(false);
                     setEditingId(null);
                     setFormData(emptyForm);
-                    setSelectedImage(null);
-                    setImagePreviewUrl("");
+                    setImageFile(null);
                   } else {
                     setShowForm(true);
                   }
@@ -596,23 +399,29 @@ export default function ManageAnnouncements() {
                 <label htmlFor="announcementImage" className="block text-sm font-semibold text-gray-700 mb-2">
                   Announcement Image (Optional)
                 </label>
+                {formData.imageUrl && !imageFile && (
+                  <div className="mb-3 relative w-32 h-32 rounded-lg overflow-hidden border border-gray-300">
+                    <img src={formData.imageUrl} alt="Current announcement" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
                 <input
                   type="file"
                   id="announcementImage"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setImageFile(e.target.files[0]);
+                    }
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <p className="mt-2 text-xs text-gray-500">
-                  Upload a JPG, PNG, or WebP image for this announcement.
-                </p>
-                {imagePreviewUrl && (
-                  <img
-                    src={imagePreviewUrl}
-                    alt="Announcement preview"
-                    className="mt-4 h-48 w-full rounded-xl border border-gray-200 object-cover"
-                  />
-                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

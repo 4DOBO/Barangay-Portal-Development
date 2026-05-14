@@ -52,6 +52,7 @@ export default function Homepage() {
   const [projectIndex, setProjectIndex] = useState(0);
   const [ayudaIndex, setAyudaIndex] = useState(0);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedAyuda, setSelectedAyuda] = useState<AyudaProgram | null>(null);
 
   useEffect(() => {
@@ -179,7 +180,7 @@ export default function Homepage() {
           type="button"
           onClick={onPrev}
           disabled={index === 0}
-          className="absolute left-0 top-1/2 z-20 hidden h-12 w-12 -translate-x-[90%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+          className="absolute left-0 top-1/2 z-20 hidden h-12 w-12 -translate-x-[145%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -187,7 +188,7 @@ export default function Homepage() {
           type="button"
           onClick={onNext}
           disabled={index >= Math.max(itemsLength - CARDS_PER_VIEW, 0)}
-          className="absolute right-0 top-1/2 z-20 hidden h-12 w-12 translate-x-[90%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+          className="absolute right-0 top-1/2 z-20 hidden h-12 w-12 translate-x-[145%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
@@ -389,7 +390,12 @@ export default function Homepage() {
                   'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                 }`}>
                 {projects.slice(projectIndex, projectIndex + CARDS_PER_VIEW).map((project) => (
-                  <div key={project.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100">
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => setSelectedProject(project)}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100 text-left"
+                  >
                     <img
                       src={project.imageUrl || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop"}
                       alt={project.title}
@@ -412,8 +418,9 @@ export default function Homepage() {
                       </div>
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>{project.title}</h3>
                       <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-3" style={{ fontFamily: "'Poppins', sans-serif" }}>{project.description}</p>
+                      <p className="mt-3 text-sm font-semibold text-[#1350A3]" style={{ fontFamily: "'Poppins', sans-serif" }}>Click to view full details</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -533,6 +540,45 @@ export default function Homepage() {
                 <span className="font-semibold">Posted by:</span> {selectedAnnouncement.author}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {selectedProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1350A3]/40 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-3 flex items-center gap-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedProject.status === "completed"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-blue-100 text-blue-800"
+                      }`}
+                  >
+                    {selectedProject.status === "completed" ? "Completed" : "Ongoing"}
+                  </span>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900">{selectedProject.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProject(null)}
+                className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+            <img
+              src={selectedProject.imageUrl || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop"}
+              alt={selectedProject.title}
+              className="mb-5 h-64 w-full rounded-xl object-cover"
+            />
+            <p className="mb-4 text-gray-700">{selectedProject.description}</p>
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Posted:</span>{" "}
+              {new Date(selectedProject.createdAt).toLocaleDateString()}
+            </p>
           </div>
         </div>
       )}
