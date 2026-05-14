@@ -224,11 +224,20 @@ export default function ManageAyuda() {
 
   const updateApplicationStatus = async (appId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      // Added .select() to check if the database actually allowed the update
+      const { data, error } = await supabase
         .from("ayuda_applications")
         .update({ status: newStatus })
-        .eq("id", appId);
+        .eq("id", appId)
+        .select();
+
       if (error) throw error;
+
+      // Catch the silent RLS block
+      if (!data || data.length === 0) {
+        throw new Error("Update blocked by database. Please check your admin permissions.");
+      }
+
       setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: newStatus } : a));
     } catch (err: any) {
       alert(err.message || "Failed to update application status");
@@ -276,7 +285,7 @@ export default function ManageAyuda() {
                 </button>
               )}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="bg-white rounded-xl border border-[#1350A3] p-3 flex items-center gap-3">
                 <div className="p-2 bg-[#1350A3]/10 text-[#1350A3] rounded-md border border-[#1350A3]">
@@ -511,7 +520,7 @@ export default function ManageAyuda() {
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{program.title}</h3>
                             <p className="text-gray-600 mb-4">{program.description}</p>
-                            
+
                             <div className="grid gap-2 text-sm bg-gray-50 border border-[#1350A3] p-4 rounded-xl">
                               <p className="text-gray-700"><span className="font-bold uppercase text-xs tracking-wider text-gray-500 block mb-1">Distribution</span> {program.distribution}</p>
                               <p className="text-gray-700"><span className="font-bold uppercase text-xs tracking-wider text-gray-500 block mb-1">Eligibility</span> {program.eligibility}</p>
@@ -522,7 +531,7 @@ export default function ManageAyuda() {
                                 </p>
                               )}
                             </div>
-                            
+
                             <div className="absolute right-4 bottom-4 flex items-center gap-3">
                               <button
                                 type="button"
@@ -583,22 +592,39 @@ export default function ManageAyuda() {
                               {app.accountName && <p><span className="font-bold">Account:</span> {app.accountName}</p>}
                             </div>
                           </div>
-                          {app.status === "pending" && (
-                            <div className="flex items-start gap-2 shrink-0">
-                              <button
-                                onClick={() => updateApplicationStatus(app.id, "approved")}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => updateApplicationStatus(app.id, "rejected")}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          )}
+                          {/* UPDATED: Buttons are always visible to allow corrections */}
+                          <div className="flex flex-col sm:flex-row items-start gap-2 shrink-0">
+                            <button
+                              onClick={() => updateApplicationStatus(app.id, "pending")}
+                              disabled={app.status === "pending"}
+                              className={`px-4 py-2 rounded-lg text-sm font-bold transition border ${app.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800 border-yellow-200 cursor-default"
+                                  : "bg-white text-gray-600 border-gray-300 hover:bg-yellow-50 hover:text-yellow-800"
+                                }`}
+                            >
+                              Pending
+                            </button>
+                            <button
+                              onClick={() => updateApplicationStatus(app.id, "approved")}
+                              disabled={app.status === "approved"}
+                              className={`px-4 py-2 rounded-lg text-sm font-bold transition border ${app.status === "approved"
+                                  ? "bg-green-100 text-green-800 border-green-200 cursor-default"
+                                  : "bg-white text-gray-600 border-gray-300 hover:bg-green-50 hover:text-green-800"
+                                }`}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateApplicationStatus(app.id, "rejected")}
+                              disabled={app.status === "rejected"}
+                              className={`px-4 py-2 rounded-lg text-sm font-bold transition border ${app.status === "rejected"
+                                  ? "bg-red-100 text-red-800 border-red-200 cursor-default"
+                                  : "bg-white text-gray-600 border-gray-300 hover:bg-red-50 hover:text-red-800"
+                                }`}
+                            >
+                              Reject
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
