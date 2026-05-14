@@ -60,41 +60,38 @@ export default function Homepage() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, ayudaRes] = await Promise.all([
-        supabase.from("projects").select("*").order("created_at", { ascending: false }),
+      setLoading(true);
+      // Fetch ONLY from updates and ayuda_programs (since projects are now inside updates)
+      const [updatesRes, ayudaRes] = await Promise.all([
+        supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("ayuda_programs").select("*").order("created_at", { ascending: false }),
       ]);
 
-      const overrides = (() => {
-        try {
-          return JSON.parse(localStorage.getItem(ANNOUNCEMENT_OVERRIDES_KEY) || "{}") as Record<string, Announcement>;
-        } catch {
-          return {};
-        }
-      })();
-      const hidden = (() => {
-        try {
-          return new Set(JSON.parse(localStorage.getItem(HIDDEN_ANNOUNCEMENTS_KEY) || "[]") as string[]);
-        } catch {
-          return new Set<string>();
-        }
-      })();
+      if (updatesRes.data) {
+        const allUpdates = updatesRes.data;
 
-      const overrideAnnouncements = Object.values(overrides);
+        // 1. Filter out Projects to get Announcements & Events
+        const fetchedAnnouncements = allUpdates.filter((u: any) => u.category !== "Project");
+        setAnnouncements(fetchedAnnouncements.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          category: a.category,
+          description: a.description,
+          eventDate: a.event_date || "",
+          author: a.author,
+          priority: a.priority,
+          createdAt: a.created_at,
+          imageUrl: a.image_url || "",
+        })));
 
-      const dedupedAnnouncements = overrideAnnouncements
-        .filter((announcement) => !hidden.has(announcement.id))
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      setAnnouncements(dedupedAnnouncements);
-
-      if (projectsRes.data) {
-        setProjects(projectsRes.data.map((p: any) => ({
+        // 2. Filter ONLY Projects for the Projects carousel
+        const fetchedProjects = allUpdates.filter((u: any) => u.category === "Project");
+        setProjects(fetchedProjects.map((p: any) => ({
           id: p.id,
           title: p.title,
           description: p.description,
           imageUrl: p.image_url || "",
-          status: p.status,
+          status: p.status || "ongoing",
           createdAt: p.created_at,
         })));
       }
