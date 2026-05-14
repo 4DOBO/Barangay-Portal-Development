@@ -29,6 +29,35 @@ export default function Root() {
     navigate("/");
   };
 
+  const handleSectionScroll = (sectionId: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const scrollToSection = () => {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+      const headerOffset = 96;
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+      window.scrollTo({ top: Math.max(sectionTop, 0), behavior: "smooth" });
+      setMobileMenuOpen(false);
+    };
+
+    if (location.pathname !== "/") {
+      navigate("/");
+      window.setTimeout(scrollToSection, 150);
+      return;
+    }
+
+    scrollToSection();
+  };
+
+  const handleScrollTop = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setMobileMenuOpen(false);
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Mate+SC&family=Poppins:wght@400&display=swap');`}</style>
@@ -280,12 +309,29 @@ export default function Root() {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-4 lg:gap-8">
-                  <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Home</Link>
-                  <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">
+                  <Link to="/" onClick={handleScrollTop} style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">Home</Link>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400, background: 'none', border: 'none' }}
+                      className="hover:opacity-60 transition text-sm lg:text-base"
+                    >
+                      Quick Links
+                    </button>
+                    <div className="invisible absolute left-0 top-full z-50 mt-2 w-44 rounded-xl border border-[#1350A3]/20 bg-white p-2 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
+                      <a href="/#announcements" onClick={handleSectionScroll("announcements")} className="block rounded-lg px-3 py-2 text-sm text-[#1350A3] transition hover:bg-gray-100">
+                        Announcements
+                      </a>
+                      <a href="/#projects" onClick={handleSectionScroll("projects")} className="block rounded-lg px-3 py-2 text-sm text-[#1350A3] transition hover:bg-gray-100">
+                        Projects
+                      </a>
+                      <a href="/#ayuda" onClick={handleSectionScroll("ayuda")} className="block rounded-lg px-3 py-2 text-sm text-[#1350A3] transition hover:bg-gray-100">
+                        Ayuda
+                      </a>
+                    </div>
+                  </div>
+                  <a href="/#about-us" onClick={handleSectionScroll("about-us")} style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">
                     About Us
-                  </a>
-                  <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60 transition text-sm lg:text-base">
-                    Hotlines
                   </a>
                   {isAdmin ? (
                     <>
@@ -320,14 +366,20 @@ export default function Root() {
               {mobileMenuOpen && (
                 <div style={{ borderTop: '1px solid #1350A3' }} className="md:hidden py-4">
                   <div className="flex flex-col gap-4">
-                    <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
+                    <Link to="/" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={handleScrollTop}>
                       Home
                     </Link>
-                    <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
-                      About Us
+                    <a href="/#announcements" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={handleSectionScroll("announcements")}>
+                      Announcements
                     </a>
-                    <a href="/#hotlines" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={() => setMobileMenuOpen(false)}>
-                      Hotlines
+                    <a href="/#projects" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={handleSectionScroll("projects")}>
+                      Projects
+                    </a>
+                    <a href="/#ayuda" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={handleSectionScroll("ayuda")}>
+                      Ayuda
+                    </a>
+                    <a href="/#about-us" style={{ color: '#000000', fontFamily: "'Poppins', sans-serif", fontWeight: 400 }} className="hover:opacity-60" onClick={handleSectionScroll("about-us")}>
+                      About Us
                     </a>
                     {isAdmin ? (
                       <>
@@ -451,32 +503,6 @@ export default function Root() {
                   </div>
                 </div>
 
-                {/* Quick Links */}
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold mb-4">Quick Links</h3>
-                  <div className="flex flex-col gap-3 text-sm">
-                    <a href="/#announcements" className="text-gray-200 hover:text-white transition">
-                      Announcements
-                    </a>
-                    <a href="/#projects" className="text-gray-200 hover:text-white transition">
-                      Projects
-                    </a>
-                    <button
-                      type="button"
-                      className="text-left text-gray-200 hover:text-white transition"
-                      style={{ background: "none", border: "none", padding: 0 }}
-                    >
-                      Ayuda
-                    </button>
-                    {isAdmin && (
-                      <>
-                        <Link to="/admin/reports" className="text-gray-200 hover:text-white transition">Reports Dashboard</Link>
-                        <Link to="/admin/announcements" className="text-gray-200 hover:text-white transition">Announcements</Link>
-                        <Link to="/admin/projects" className="text-gray-200 hover:text-white transition">Projects</Link>
-                      </>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           </footer>

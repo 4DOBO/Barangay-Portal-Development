@@ -136,26 +136,64 @@ export default function Homepage() {
     index: number,
     onPrev: () => void,
     onNext: () => void,
-  ) => (
-    <div className="mb-8 flex justify-end gap-3">
-      <button
-        type="button"
-        onClick={onPrev}
-        disabled={index === 0}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={index >= Math.max(itemsLength - CARDS_PER_VIEW, 0)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <ChevronRight className="h-6 w-6" />
-      </button>
-    </div>
-  );
+  ) => {
+    if (itemsLength <= CARDS_PER_VIEW) {
+      return null;
+    }
+
+    return (
+      <div className="mb-8 flex justify-between gap-3 lg:hidden">
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={index === 0}
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={index >= Math.max(itemsLength - CARDS_PER_VIEW, 0)}
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      </div>
+    );
+  };
+
+  const renderSideCarouselControls = (
+    itemsLength: number,
+    index: number,
+    onPrev: () => void,
+    onNext: () => void,
+  ) => {
+    if (itemsLength <= CARDS_PER_VIEW) {
+      return null;
+    }
+
+    return (
+      <>
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={index === 0}
+          className="absolute left-0 top-1/2 z-20 hidden h-12 w-12 -translate-x-[90%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={index >= Math.max(itemsLength - CARDS_PER_VIEW, 0)}
+          className="absolute right-0 top-1/2 z-20 hidden h-12 w-12 translate-x-[90%] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1350A3] shadow-md transition disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      </>
+    );
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -234,8 +272,8 @@ export default function Homepage() {
               LATEST ANNOUNCEMENTS
             </h2>
             <p
-              className="text-sm sm:text-base md:text-lg"
-              style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400, color: '#555', lineHeight: 1.5 }}
+              className="text-xl text-gray-600"
+              style={{ fontFamily: "'Poppins', sans-serif", fontSize: '20px', fontWeight: '400', color: '#000000', lineHeight: 1 }}
             >
               Stay informed with the latest updates from our barangay
             </p>
@@ -248,7 +286,13 @@ export default function Homepage() {
               <p className="text-gray-500 text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>No announcements yet.</p>
             </div>
           ) : (
-            <>
+            <div className="relative">
+              {renderSideCarouselControls(
+                announcements.length,
+                announcementIndex,
+                () => moveCarousel("prev", announcements.length, announcementIndex, setAnnouncementIndex),
+                () => moveCarousel("next", announcements.length, announcementIndex, setAnnouncementIndex),
+              )}
               {renderCarouselControls(
                 announcements.length,
                 announcementIndex,
@@ -297,7 +341,7 @@ export default function Homepage() {
                   </button>
                 ))}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
@@ -313,8 +357,8 @@ export default function Homepage() {
               BARANGAY PROJECTS
             </h2>
             <p
-              className="text-sm sm:text-base md:text-lg"
-              style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 400, color: '#555', lineHeight: 1.5 }}
+              className="text-xl text-gray-600"
+              style={{ fontFamily: "'Poppins', sans-serif", fontSize: '20px', fontWeight: '400', color: '#000000', lineHeight: 1, }}
             >
               Building a better community together
             </p>
@@ -327,7 +371,13 @@ export default function Homepage() {
               <p className="text-gray-500 text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>No projects yet.</p>
             </div>
           ) : (
-            <>
+            <div className="relative">
+              {renderSideCarouselControls(
+                projects.length,
+                projectIndex,
+                () => moveCarousel("prev", projects.length, projectIndex, setProjectIndex),
+                () => moveCarousel("next", projects.length, projectIndex, setProjectIndex),
+              )}
               {renderCarouselControls(
                 projects.length,
                 projectIndex,
@@ -366,7 +416,7 @@ export default function Homepage() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
@@ -375,17 +425,23 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Mate SC', serif", fontSize: '48px', fontWeight: '400', color: '#000000', lineHeight: 1, WebkitTextStroke: '1px #000000' }}>AYUDA PROGRAMS</h2>
-            <p className="text-xl text-gray-600" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Stay updated on ayuda programs and distributions</p>
+            <p className="text-xl text-gray-600" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '20px', fontWeight: '400', color: '#000000', lineHeight: 1, }}>Stay updated on ayuda programs and distributions</p>
           </div>
 
           {loading ? (
             <div className="text-center py-12 text-gray-500" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>Loading ayuda programs...</div>
           ) : ayudaPrograms.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-md">
-              <p className="text-gray-500 text-lg" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', fontWeight: '400', color: '#000000', lineHeight: 1 }}>No ayuda programs yet.</p>
+              <p className="text-gray-500 text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>No ayuda programs yet.</p>
             </div>
           ) : (
-            <>
+            <div className="relative">
+              {renderSideCarouselControls(
+                ayudaPrograms.length,
+                ayudaIndex,
+                () => moveCarousel("prev", ayudaPrograms.length, ayudaIndex, setAyudaIndex),
+                () => moveCarousel("next", ayudaPrograms.length, ayudaIndex, setAyudaIndex),
+              )}
               {renderCarouselControls(
                 ayudaPrograms.length,
                 ayudaIndex,
@@ -424,7 +480,7 @@ export default function Homepage() {
                   </button>
                 ))}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
