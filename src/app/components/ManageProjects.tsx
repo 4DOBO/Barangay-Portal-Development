@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { FolderKanban, Plus, Calendar, Pencil, Trash2 } from "lucide-react";
+import { FolderKanban, Plus, Calendar, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 interface Project {
@@ -21,6 +21,7 @@ export default function ManageProjects() {
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // <--- NEW STATE
 
   const [displayName, setDisplayName] = useState("Admin");
 
@@ -89,32 +90,52 @@ export default function ManageProjects() {
     setSubmitting(true);
 
     try {
+      let finalImageUrl = formData.imageUrl;
+
+      // --- NEW UPLOAD LOGIC ---
+      if (imageFile) {
+        // Generate a unique filename to prevent overwriting
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+        // Upload the file to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('barangay-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        // Get the public URL of the newly uploaded image
+        const { data: publicUrlData } = supabase.storage
+          .from('barangay-images')
+          .getPublicUrl(fileName);
+
+        finalImageUrl = publicUrlData.publicUrl;
+      }
+      // -------------------------
+
       const isEditing = Boolean(editingProjectId);
       const dbData = {
         title: formData.title,
         description: formData.description,
-        image_url: formData.imageUrl,
+        image_url: finalImageUrl, // Use the new uploaded URL (or the existing one)
         status: formData.status,
-        category: "Project", // <--- Required by updates table
-        author: displayName, // <--- Required by updates table
-        priority: "low",     // <--- Required by updates table
+        category: "Project",
+        author: displayName,
+        priority: "low",
       };
 
       if (isEditing) {
-        const { error: updateError } = await supabase
-          .from("updates") // <--- Changed from "projects"
-          .update(dbData)
-          .eq("id", editingProjectId);
+        const { error: updateError } = await supabase.from("updates").update(dbData).eq("id", editingProjectId);
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase
-          .from("updates") // <--- Changed from "projects"
-          .insert([dbData]);
+        const { error: insertError } = await supabase.from("updates").insert([dbData]);
         if (insertError) throw insertError;
       }
 
       setSuccess(`Project ${isEditing ? "updated" : "created"} successfully!`);
       setFormData({ title: "", description: "", imageUrl: "", status: "ongoing" });
+      setImageFile(null); // Clear the file selection
       setEditingProjectId(null);
       setShowForm(false);
       fetchProjects();
@@ -296,16 +317,34 @@ export default function ManageProjects() {
               </div>
 
               <div>
-                <label htmlFor="imageUrl" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Image URL (Optional)
+                <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Project Image
                 </label>
+
+                {/* Show existing image preview if editing */}
+                {formData.imageUrl && !imageFile && (
+                  <div className="mb-3 relative w-32 h-32 rounded-lg overflow-hidden border border-gray-300">
+                    <img src={formData.imageUrl} alt="Current project" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" /> {/* Note: Ensure you import { X } from 'lucide-react' */}
+                    </button>
+                  </div>
+                )}
+
                 <input
-                  type="url"
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/image.jpg"
+                  type="file"
+                  id="imageFile"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setImageFile(e.target.files[0]);
+                    }
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
 
